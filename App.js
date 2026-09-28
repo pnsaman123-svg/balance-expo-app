@@ -2364,6 +2364,20 @@ function MainApp() {
             </View>
           )}
 
+          {/* FLOATING ADD EXPENSE FAB (BOTTOM RIGHT ON HOME) */}
+          {currentTab === 'home' && !isAddExpenseOpen && (
+            <TouchableOpacity
+              style={[
+                styles.floatingAddExpenseFab,
+                { bottom: Math.max(18, insets.bottom + 10) },
+              ]}
+              onPress={() => setIsAddExpenseOpen(true)}
+              activeOpacity={0.85}
+            >
+              <Plus size={26} color="#090909" strokeWidth={3} />
+            </TouchableOpacity>
+          )}
+
           {/* Month Selector Modal */}
           <Modal visible={isMonthPickerOpen} transparent animationType="fade">
             <TouchableOpacity
@@ -4726,5 +4740,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
+  },
+  floatingAddExpenseFab: {
+    position: 'absolute',
+    right: 20,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 99,
   },
 });
