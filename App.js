@@ -168,7 +168,7 @@ function RenderCategoryIcon({ iconName, size = 16, color = '#FFFFFF', bgColor = 
   );
 }
 
-function OnboardingRatioSliderTrack({ label, subtitle, percent, amount, color, onPercentChange, formatCurr }) {
+function OnboardingRatioSliderTrack({ label, percent, amount, color, onPercentChange, formatCurr }) {
   const [trackWidth, setTrackWidth] = useState(0);
 
   const handleTouch = (evt) => {
@@ -182,16 +182,13 @@ function OnboardingRatioSliderTrack({ label, subtitle, percent, amount, color, o
   return (
     <View style={styles.ratioSliderCard}>
       <View style={styles.ratioSliderHeader}>
-        <View style={{ flex: 1, marginRight: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-            <View style={[styles.ratioPillarDot, { backgroundColor: color }]} />
-            <Text style={styles.ratioSliderTitle}>{label}</Text>
-          </View>
-          <Text style={styles.ratioSliderSubtitle} numberOfLines={1}>{subtitle}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={[styles.ratioPillarDot, { backgroundColor: color }]} />
+          <Text style={styles.ratioSliderTitle}>{label}</Text>
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.ratioSliderPercent}>{percent}%</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
           <Text style={styles.ratioSliderAmount}>{formatCurr(amount)}</Text>
+          <Text style={styles.ratioSliderPercent}>{percent}%</Text>
         </View>
       </View>
 
@@ -1048,12 +1045,9 @@ function MainApp() {
       return (
         <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-            {/* Header Title */}
-            <View style={{ paddingTop: 4, marginBottom: 16 }}>
+            {/* Header Title Only (No Subtext) */}
+            <View style={{ paddingTop: 6, marginBottom: 18 }}>
               <Text style={styles.onboardingStepTitle}>Where should your money go?</Text>
-              <Text style={styles.onboardingStepDesc}>
-                Slide to adjust your budget ratio for {formatCurr(totalSetupInc)}.
-              </Text>
             </View>
 
             {/* Horizontal Segmented Ratio Visualizer Bar */}
@@ -1079,35 +1073,10 @@ function MainApp() {
               </View>
             </View>
 
-            {/* Fast Presets Chips */}
-            <View style={styles.ratioPresetsRow}>
-              {[
-                { name: '50/30/20', n: 50, w: 30, s: 20 },
-                { name: '60/20/20', n: 60, w: 20, s: 20 },
-                { name: '70/20/10', n: 70, w: 20, s: 10 },
-                { name: '40/30/30', n: 40, w: 30, s: 30 },
-              ].map((p) => {
-                const isMatch = setupPercent.needs === p.n && setupPercent.wants === p.w && setupPercent.savings === p.s;
-                return (
-                  <TouchableOpacity
-                    key={p.name}
-                    onPress={() => setSetupPercent({ needs: p.n, wants: p.w, savings: p.s })}
-                    style={[styles.ratioPresetChip, isMatch && styles.ratioPresetChipActive]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.ratioPresetChipText, isMatch && styles.ratioPresetChipTextActive]}>
-                      {p.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Horizontal Sliders for Each Pillar */}
+            {/* Horizontal Sliders for Each Pillar (No Subtext) */}
             <View style={{ gap: 12 }}>
               <OnboardingRatioSliderTrack
-                label="Needs (Essentials)"
-                subtitle="Rent, Groceries, Utilities, Transport"
+                label="Needs"
                 percent={setupPercent.needs}
                 amount={allocNeeds}
                 color="#FFFFFF"
@@ -1116,8 +1085,7 @@ function MainApp() {
               />
 
               <OnboardingRatioSliderTrack
-                label="Wants (Lifestyle)"
-                subtitle="Dining Out, Shopping, Subscriptions"
+                label="Wants"
                 percent={setupPercent.wants}
                 amount={allocWants}
                 color="#8E8E93"
@@ -1126,8 +1094,7 @@ function MainApp() {
               />
 
               <OnboardingRatioSliderTrack
-                label="Savings & Debt"
-                subtitle="Emergency Fund, Investments"
+                label="Savings"
                 percent={setupPercent.savings}
                 amount={allocSavings}
                 color="#636366"
@@ -1136,30 +1103,27 @@ function MainApp() {
               />
             </View>
 
-            {/* Total Balance Status Badge */}
-            <View style={[styles.ratioStatusCard, !isBalanced && { borderColor: '#442222', backgroundColor: '#1A1111' }]}>
-              <View>
-                <Text style={styles.ratioStatusLabel}>Total Allocation</Text>
-                <Text style={styles.ratioStatusValue}>
-                  {totalPct}% ({formatCurr(totalAlloc)})
-                </Text>
-              </View>
-              {isBalanced ? (
-                <View style={styles.ratioBalancedBadge}>
-                  <Check size={14} color="#090909" strokeWidth={3} />
-                  <Text style={styles.ratioBalancedText}>Balanced</Text>
-                </View>
-              ) : (
+            {/* Single Centered CTA for Auto-Fix or Balance Status */}
+            <View style={styles.centerAutoFixWrapper}>
+              {!isBalanced ? (
                 <TouchableOpacity
-                  style={styles.ratioAutoBalanceBtn}
+                  style={styles.centerAutoFixCta}
                   onPress={() => {
                     const rem = Math.max(0, 100 - setupPercent.needs - setupPercent.wants);
                     setSetupPercent((prev) => ({ ...prev, savings: rem }));
                   }}
-                  activeOpacity={0.7}
+                  activeOpacity={0.85}
                 >
-                  <Text style={styles.ratioAutoBalanceText}>Auto-Fix ({totalPct > 100 ? `+${totalPct - 100}%` : `-${100 - totalPct}%`})</Text>
+                  <Sparkles size={17} color="#090909" strokeWidth={2.5} />
+                  <Text style={styles.centerAutoFixText}>
+                    Auto Fix ({totalPct > 100 ? `+${totalPct - 100}%` : `-${100 - totalPct}%`})
+                  </Text>
                 </TouchableOpacity>
+              ) : (
+                <View style={styles.centerBalancedIndicator}>
+                  <Check size={16} color="#FFFFFF" strokeWidth={2.8} />
+                  <Text style={styles.centerBalancedText}>100% Balanced ({formatCurr(totalAlloc)})</Text>
+                </View>
               )}
             </View>
           </ScrollView>
@@ -4533,6 +4497,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     paddingHorizontal: 2,
+  // STEP 2 RATIO SLIDER STYLES
+  ratioVisualizerContainer: {
+    backgroundColor: '#141414',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#222222',
+    padding: 14,
+    marginBottom: 16,
+  },
+  ratioVisualizerBar: {
+    height: 14,
+    borderRadius: 7,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    backgroundColor: '#1E1E1E',
+    gap: 3,
+  },
+  ratioVisualizerSeg: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  ratioVisualizerLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 2,
   },
   ratioLegendItem: {
     flexDirection: 'row',
@@ -4549,35 +4540,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#A0A0A0',
   },
-  ratioPresetsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 14,
-  },
-  ratioPresetChip: {
-    flex: 1,
-    paddingVertical: 9,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    backgroundColor: '#141414',
-    borderWidth: 1,
-    borderColor: '#222222',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ratioPresetChipActive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
-  },
-  ratioPresetChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#8A8A8A',
-  },
-  ratioPresetChipTextActive: {
-    color: '#090909',
-    fontWeight: '800',
-  },
   ratioSliderCard: {
     backgroundColor: '#141414',
     borderRadius: 20,
@@ -4588,7 +4550,7 @@ const styles = StyleSheet.create({
   ratioSliderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
   },
   ratioPillarDot: {
@@ -4597,14 +4559,9 @@ const styles = StyleSheet.create({
     borderRadius: 4.5,
   },
   ratioSliderTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
-  },
-  ratioSliderSubtitle: {
-    fontSize: 11.5,
-    color: '#777777',
-    marginTop: 3,
   },
   ratioSliderPercent: {
     fontSize: 18,
@@ -4613,10 +4570,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   ratioSliderAmount: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#8A8A8A',
-    marginTop: 2,
   },
   ratioSliderTrackContainer: {
     paddingVertical: 10,
@@ -4668,55 +4624,47 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#A0A0A0',
   },
-  ratioStatusCard: {
-    backgroundColor: '#141414',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#222222',
-    padding: 14,
-    marginTop: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  centerAutoFixWrapper: {
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+    marginBottom: 6,
   },
-  ratioStatusLabel: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    color: '#777777',
-    textTransform: 'uppercase',
-  },
-  ratioStatusValue: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginTop: 2,
-  },
-  ratioBalancedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  centerAutoFixCta: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 26,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  ratioBalancedText: {
-    fontSize: 12,
-    fontWeight: '800',
+  centerAutoFixText: {
     color: '#090909',
+    fontSize: 14.5,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
-  ratioAutoBalanceBtn: {
-    backgroundColor: '#2A1818',
+  centerBalancedIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: '#141414',
     borderWidth: 1,
-    borderColor: '#552222',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    borderColor: '#242424',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 20,
   },
-  ratioAutoBalanceText: {
-    fontSize: 12,
+  centerBalancedText: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
     fontWeight: '700',
-    color: '#FF6B6B',
   },
   onboardingNavRow: {
     flexDirection: 'row',
