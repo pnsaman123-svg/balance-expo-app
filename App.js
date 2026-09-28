@@ -4477,33 +4477,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#222222',
     padding: 14,
-    marginBottom: 14,
-  },
-  ratioVisualizerBar: {
-    height: 14,
-    borderRadius: 7,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    backgroundColor: '#1E1E1E',
-    gap: 3,
-  },
-  ratioVisualizerSeg: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  ratioVisualizerLegend: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-    paddingHorizontal: 2,
-  // STEP 2 RATIO SLIDER STYLES
-  ratioVisualizerContainer: {
-    backgroundColor: '#141414',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#222222',
-    padding: 14,
     marginBottom: 16,
   },
   ratioVisualizerBar: {
