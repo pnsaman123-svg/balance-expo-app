@@ -1275,7 +1275,7 @@ function MainApp() {
                   activeOpacity={0.8}
                 >
                   <Plus size={16} color="#FFFFFF" strokeWidth={2.6} />
-                  <Text style={styles.centerAddCategoryBtnText}>Add Category</Text>
+                  <Text style={styles.centerAddCategoryBtnText}>Add</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -4704,5 +4704,27 @@ const styles = StyleSheet.create({
     borderColor: '#222222',
     shadowOpacity: 0,
     elevation: 0,
+  },
+  centerAddCategoryWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  centerAddCategoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#242424',
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: 20,
+  },
+  centerAddCategoryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
