@@ -861,9 +861,9 @@ function MainApp() {
 
     if (onboardingStep === 2) {
       return (
-        <View style={[styles.onboardingContainer, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 8, justifyContent: 'space-between', paddingHorizontal: 16 }]}>
-          {/* Top Title Only (No step 1 of 3) */}
-          <View style={{ paddingTop: 4 }}>
+        <View style={[styles.onboardingContainer, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 12, justifyContent: 'space-between', paddingHorizontal: 16 }]}>
+          {/* Top Title Only */}
+          <View style={{ paddingTop: 6 }}>
             <Text style={styles.onboardingStepTitle}>What is your monthly income?</Text>
           </View>
 
@@ -875,8 +875,9 @@ function MainApp() {
             </Text>
           </View>
 
-          {/* Filled Bottom Calculator Keypad */}
+          {/* Filled Bottom Calculator Keypad (4 Rows) */}
           <View style={styles.calcKeypadWrapperFilled}>
+            {/* Row 1 */}
             <View style={styles.calcKeypadRow}>
               {['1', '2', '3'].map((k) => (
                 <TouchableOpacity
@@ -889,6 +890,8 @@ function MainApp() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Row 2 */}
             <View style={styles.calcKeypadRow}>
               {['4', '5', '6'].map((k) => (
                 <TouchableOpacity
@@ -901,6 +904,8 @@ function MainApp() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Row 3 */}
             <View style={styles.calcKeypadRow}>
               {['7', '8', '9'].map((k) => (
                 <TouchableOpacity
@@ -913,14 +918,19 @@ function MainApp() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Row 4: Backspace (left to zero) | 0 (center) | Checkmark Tick (right to zero) */}
             <View style={styles.calcKeypadRow}>
+              {/* Left to zero: Backspace */}
               <TouchableOpacity
                 style={styles.calcKeypadBtnFilled}
-                onPress={() => handleSetupKeypadPress('.')}
+                onPress={() => handleSetupKeypadPress('backspace')}
                 activeOpacity={0.7}
               >
-                <Text style={styles.calcKeypadTextFilled}>.</Text>
+                <Delete size={24} color="#FFFFFF" strokeWidth={2.4} />
               </TouchableOpacity>
+
+              {/* Center: 0 */}
               <TouchableOpacity
                 style={styles.calcKeypadBtnFilled}
                 onPress={() => handleSetupKeypadPress('0')}
@@ -928,31 +938,29 @@ function MainApp() {
               >
                 <Text style={styles.calcKeypadTextFilled}>0</Text>
               </TouchableOpacity>
+
+              {/* Right to zero: Tick Mark to proceed to next step */}
               <TouchableOpacity
-                style={styles.calcKeypadBtnFilled}
-                onPress={() => handleSetupKeypadPress('backspace')}
-                activeOpacity={0.7}
+                style={[
+                  styles.calcKeypadBtnFilled,
+                  totalSetupInc > 0 ? styles.calcKeypadBtnTickActive : styles.calcKeypadBtnTickDisabled,
+                ]}
+                onPress={() => {
+                  if (totalSetupInc > 0) {
+                    setSetupIncome([{ id: '1', name: 'Monthly Salary', amount: setupIncomeStr }]);
+                    setOnboardingStep(3);
+                  }
+                }}
+                disabled={totalSetupInc <= 0}
+                activeOpacity={0.8}
               >
-                <Delete size={24} color="#FFFFFF" />
+                <Check
+                  size={26}
+                  color={totalSetupInc > 0 ? '#090909' : '#555555'}
+                  strokeWidth={3}
+                />
               </TouchableOpacity>
             </View>
-
-            {/* Bottom Keypad Action: Full-width Next Key */}
-            <TouchableOpacity
-              style={[
-                styles.calcKeypadSubmitBtn,
-                { opacity: totalSetupInc > 0 ? 1 : 0.4 },
-              ]}
-              onPress={() => {
-                setSetupIncome([{ id: '1', name: 'Monthly Salary', amount: setupIncomeStr }]);
-                setOnboardingStep(3);
-              }}
-              disabled={totalSetupInc <= 0}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.calcKeypadSubmitText}>Next</Text>
-              <ChevronRight size={18} color="#090909" strokeWidth={2.8} />
-            </TouchableOpacity>
           </View>
         </View>
       );
@@ -4325,38 +4333,31 @@ const styles = StyleSheet.create({
   },
   calcKeypadBtnFilled: {
     flex: 1,
-    height: 68,
+    height: 72,
     backgroundColor: '#141414',
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: '#222222',
     alignItems: 'center',
     justifyContent: 'center',
   },
   calcKeypadTextFilled: {
-    fontSize: 26,
+    fontSize: 27,
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  calcKeypadSubmitBtn: {
-    width: '100%',
-    height: 60,
+  calcKeypadBtnTickActive: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    borderColor: '#FFFFFF',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  calcKeypadSubmitText: {
-    color: '#090909',
-    fontSize: 16,
-    fontWeight: '800',
+  calcKeypadBtnTickDisabled: {
+    backgroundColor: '#121212',
+    borderColor: '#1E1E1E',
+    opacity: 0.4,
   },
 });
