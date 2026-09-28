@@ -1410,8 +1410,8 @@ function MainApp() {
                 setCurrentTab('home');
               }}
             >
-              <Text style={styles.onboardingPrimaryBtnText}>Launch Home Dashboard</Text>
-              <Check size={16} color="#090909" strokeWidth={3} />
+              <Text style={styles.onboardingPrimaryBtnText}>Let's Go</Text>
+              <ArrowRight size={18} color="#090909" strokeWidth={2.8} />
             </TouchableOpacity>
           </View>
         </View>
