@@ -1188,14 +1188,15 @@ function MainApp() {
       const pillarDiff = activePillarBudget - subTotal;
 
       return (
-        <View style={[styles.onboardingContainer, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
+        <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-            <Text style={styles.onboardingStepLabel}>STEP 3 OF 3</Text>
-            <Text style={styles.onboardingStepTitle}>Customize Expense Categories</Text>
-            <Text style={styles.onboardingStepDesc}>Add, remove, or customize categories for each pillar.</Text>
+            {/* Title Only (No step label or subtext) */}
+            <View style={{ paddingTop: 6, marginBottom: 16 }}>
+              <Text style={styles.onboardingStepTitle}>Customize Expense Categories</Text>
+            </View>
 
             {/* Segmented Pillar Selector */}
-            <View style={styles.catTabContainer}>
+            <View style={[styles.catTabContainer, { marginBottom: 14 }]}>
               {[
                 { key: 'needs', label: 'Needs', amount: allocNeeds },
                 { key: 'wants', label: 'Wants', amount: allocWants },
@@ -1218,31 +1219,6 @@ function MainApp() {
                 );
               })}
             </View>
-
-            {/* Active Pillar Overview Card */}
-            <View style={styles.setupPillarSummaryCard}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 12, color: '#8A8A8A', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: 0.5 }}>
-                  {activeSetupCat} Budget Allocation
-                </Text>
-                <Text style={{ fontSize: 12, color: pillarDiff === 0 ? '#FFFFFF' : '#8A8A8A', fontWeight: 'bold' }}>
-                  {pillarDiff === 0 ? '✓ Balanced' : pillarDiff > 0 ? `${formatCurr(pillarDiff)} unallocated` : `${formatCurr(Math.abs(pillarDiff))} over`}
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
-                <Text style={{ fontSize: 26, fontWeight: '900', color: '#FFFFFF' }}>
-                  {formatCurr(subTotal)}
-                </Text>
-                <Text style={{ fontSize: 13, color: '#8A8A8A', fontWeight: '500' }}>
-                  Target: {formatCurr(activePillarBudget)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Subcategories List for Active Pillar */}
-            <Text style={{ fontSize: 12.5, fontWeight: 'bold', color: '#8A8A8A', marginTop: 16, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-              Categories in {activeSetupCat}
-            </Text>
 
             <View style={{ gap: 8 }}>
               {currentSubList.map((sub) => (
