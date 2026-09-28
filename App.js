@@ -59,6 +59,7 @@ import {
   SlidersHorizontal,
   Minus,
   Percent,
+  ArrowRight,
 } from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -163,6 +164,80 @@ function RenderCategoryIcon({ iconName, size = 16, color = '#FFFFFF', bgColor = 
   return (
     <View style={[styles.iconContainer, { width: size + 16, height: size + 16, backgroundColor: bgColor }]}>
       <IconComp size={size} color={color} strokeWidth={2} />
+    </View>
+  );
+}
+
+function OnboardingRatioSliderTrack({ label, subtitle, percent, amount, color, onPercentChange, formatCurr }) {
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  const handleTouch = (evt) => {
+    if (trackWidth <= 0) return;
+    const x = evt.nativeEvent.locationX;
+    const rawPct = (x / trackWidth) * 100;
+    const snapped = Math.max(0, Math.min(100, Math.round(rawPct / 5) * 5));
+    onPercentChange(snapped);
+  };
+
+  return (
+    <View style={styles.ratioSliderCard}>
+      <View style={styles.ratioSliderHeader}>
+        <View style={{ flex: 1, marginRight: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+            <View style={[styles.ratioPillarDot, { backgroundColor: color }]} />
+            <Text style={styles.ratioSliderTitle}>{label}</Text>
+          </View>
+          <Text style={styles.ratioSliderSubtitle} numberOfLines={1}>{subtitle}</Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={styles.ratioSliderPercent}>{percent}%</Text>
+          <Text style={styles.ratioSliderAmount}>{formatCurr(amount)}</Text>
+        </View>
+      </View>
+
+      {/* Horizontal Interactive Slider Bar */}
+      <View
+        style={styles.ratioSliderTrackContainer}
+        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={handleTouch}
+        onResponderMove={handleTouch}
+      >
+        <View style={styles.ratioSliderTrackBg}>
+          <View style={[styles.ratioSliderTrackFill, { width: `${Math.max(0, Math.min(100, percent))}%`, backgroundColor: color }]} />
+        </View>
+        <View
+          style={[
+            styles.ratioSliderThumb,
+            {
+              left: `${Math.max(0, Math.min(92, percent - 4))}%`,
+              borderColor: color,
+            },
+          ]}
+        />
+      </View>
+
+      {/* Precision Steppers */}
+      <View style={styles.ratioStepperRow}>
+        <TouchableOpacity
+          style={styles.ratioStepBtn}
+          onPress={() => onPercentChange(Math.max(0, percent - 5))}
+          activeOpacity={0.7}
+        >
+          <Minus size={13} color="#A0A0A0" />
+          <Text style={styles.ratioStepBtnText}>5%</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.ratioStepBtn}
+          onPress={() => onPercentChange(Math.min(100, percent + 5))}
+          activeOpacity={0.7}
+        >
+          <Plus size={13} color="#A0A0A0" />
+          <Text style={styles.ratioStepBtnText}>5%</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -967,14 +1042,45 @@ function MainApp() {
     }
 
     if (onboardingStep === 3) {
-      return (
-        <View style={[styles.onboardingContainer, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-            <Text style={styles.onboardingStepLabel}>STEP 2 OF 3</Text>
-            <Text style={styles.onboardingStepTitle}>Where should your money go?</Text>
-            <Text style={styles.onboardingStepDesc}>Allocate your {formatCurr(totalSetupInc)} across the 3 pillars.</Text>
+      const isBalanced = totalAlloc === totalSetupInc && (setupPercent.needs + setupPercent.wants + setupPercent.savings === 100);
+      const totalPct = setupPercent.needs + setupPercent.wants + setupPercent.savings;
 
-            <View style={{ flexDirection: 'row', gap: 8, marginVertical: 16 }}>
+      return (
+        <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+            {/* Header Title */}
+            <View style={{ paddingTop: 4, marginBottom: 16 }}>
+              <Text style={styles.onboardingStepTitle}>Where should your money go?</Text>
+              <Text style={styles.onboardingStepDesc}>
+                Slide to adjust your budget ratio for {formatCurr(totalSetupInc)}.
+              </Text>
+            </View>
+
+            {/* Horizontal Segmented Ratio Visualizer Bar */}
+            <View style={styles.ratioVisualizerContainer}>
+              <View style={styles.ratioVisualizerBar}>
+                <View style={[styles.ratioVisualizerSeg, { flex: Math.max(1, setupPercent.needs), backgroundColor: '#FFFFFF' }]} />
+                <View style={[styles.ratioVisualizerSeg, { flex: Math.max(1, setupPercent.wants), backgroundColor: '#8E8E93' }]} />
+                <View style={[styles.ratioVisualizerSeg, { flex: Math.max(1, setupPercent.savings), backgroundColor: '#48484A' }]} />
+              </View>
+              <View style={styles.ratioVisualizerLegend}>
+                <View style={styles.ratioLegendItem}>
+                  <View style={[styles.ratioLegendDot, { backgroundColor: '#FFFFFF' }]} />
+                  <Text style={styles.ratioLegendText}>Needs {setupPercent.needs}%</Text>
+                </View>
+                <View style={styles.ratioLegendItem}>
+                  <View style={[styles.ratioLegendDot, { backgroundColor: '#8E8E93' }]} />
+                  <Text style={styles.ratioLegendText}>Wants {setupPercent.wants}%</Text>
+                </View>
+                <View style={styles.ratioLegendItem}>
+                  <View style={[styles.ratioLegendDot, { backgroundColor: '#48484A' }]} />
+                  <Text style={styles.ratioLegendText}>Savings {setupPercent.savings}%</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Fast Presets Chips */}
+            <View style={styles.ratioPresetsRow}>
               {[
                 { name: '50/30/20', n: 50, w: 30, s: 20 },
                 { name: '60/20/20', n: 60, w: 20, s: 20 },
@@ -986,54 +1092,93 @@ function MainApp() {
                   <TouchableOpacity
                     key={p.name}
                     onPress={() => setSetupPercent({ needs: p.n, wants: p.w, savings: p.s })}
-                    style={[styles.presetChipSmall, isMatch && styles.presetChipSmallActive]}
+                    style={[styles.ratioPresetChip, isMatch && styles.ratioPresetChipActive]}
+                    activeOpacity={0.7}
                   >
-                    <Text style={[styles.presetChipSmallText, isMatch && styles.presetChipSmallTextActive]}>{p.name}</Text>
+                    <Text style={[styles.ratioPresetChipText, isMatch && styles.ratioPresetChipTextActive]}>
+                      {p.name}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
+            {/* Horizontal Sliders for Each Pillar */}
             <View style={{ gap: 12 }}>
-              <View style={styles.allocCard}>
-                <View style={styles.allocHeader}>
-                  <Text style={styles.allocTitle}>Needs ({setupPercent.needs}%)</Text>
-                  <Text style={styles.allocAmount}>{formatCurr(allocNeeds)}</Text>
-                </View>
-                <Text style={styles.allocSub}>Rent, Groceries, Utilities, Transport, Medical</Text>
-              </View>
+              <OnboardingRatioSliderTrack
+                label="Needs (Essentials)"
+                subtitle="Rent, Groceries, Utilities, Transport"
+                percent={setupPercent.needs}
+                amount={allocNeeds}
+                color="#FFFFFF"
+                formatCurr={formatCurr}
+                onPercentChange={(val) => setSetupPercent((prev) => ({ ...prev, needs: val }))}
+              />
 
-              <View style={styles.allocCard}>
-                <View style={styles.allocHeader}>
-                  <Text style={styles.allocTitle}>Wants ({setupPercent.wants}%)</Text>
-                  <Text style={styles.allocAmount}>{formatCurr(allocWants)}</Text>
-                </View>
-                <Text style={styles.allocSub}>Dining Out, Shopping, Subscriptions, Leisure</Text>
-              </View>
+              <OnboardingRatioSliderTrack
+                label="Wants (Lifestyle)"
+                subtitle="Dining Out, Shopping, Subscriptions"
+                percent={setupPercent.wants}
+                amount={allocWants}
+                color="#8E8E93"
+                formatCurr={formatCurr}
+                onPercentChange={(val) => setSetupPercent((prev) => ({ ...prev, wants: val }))}
+              />
 
-              <View style={styles.allocCard}>
-                <View style={styles.allocHeader}>
-                  <Text style={styles.allocTitle}>Savings ({setupPercent.savings}%)</Text>
-                  <Text style={styles.allocAmount}>{formatCurr(allocSavings)}</Text>
-                </View>
-                <Text style={styles.allocSub}>Emergency Fund, Investments, Debt Repayment</Text>
-              </View>
+              <OnboardingRatioSliderTrack
+                label="Savings & Debt"
+                subtitle="Emergency Fund, Investments"
+                percent={setupPercent.savings}
+                amount={allocSavings}
+                color="#636366"
+                formatCurr={formatCurr}
+                onPercentChange={(val) => setSetupPercent((prev) => ({ ...prev, savings: val }))}
+              />
             </View>
 
-            <View style={styles.allocSummaryBox}>
-              <Text style={{ fontSize: 13, color: '#8A8A8A', fontWeight: '500' }}>
-                Total: {setupPercent.needs + setupPercent.wants + setupPercent.savings}% ({formatCurr(totalAlloc)})
-              </Text>
-              <Text style={{ fontSize: 13, color: '#FFFFFF', fontWeight: 'bold' }}>✓ Balanced</Text>
+            {/* Total Balance Status Badge */}
+            <View style={[styles.ratioStatusCard, !isBalanced && { borderColor: '#442222', backgroundColor: '#1A1111' }]}>
+              <View>
+                <Text style={styles.ratioStatusLabel}>Total Allocation</Text>
+                <Text style={styles.ratioStatusValue}>
+                  {totalPct}% ({formatCurr(totalAlloc)})
+                </Text>
+              </View>
+              {isBalanced ? (
+                <View style={styles.ratioBalancedBadge}>
+                  <Check size={14} color="#090909" strokeWidth={3} />
+                  <Text style={styles.ratioBalancedText}>Balanced</Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.ratioAutoBalanceBtn}
+                  onPress={() => {
+                    const rem = Math.max(0, 100 - setupPercent.needs - setupPercent.wants);
+                    setSetupPercent((prev) => ({ ...prev, savings: rem }));
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.ratioAutoBalanceText}>Auto-Fix ({totalPct > 100 ? `+${totalPct - 100}%` : `-${100 - totalPct}%`})</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
 
-          <View style={{ flexDirection: 'row', gap: 10, paddingTop: 10 }}>
-            <TouchableOpacity style={styles.onboardingBackBtn} onPress={() => setOnboardingStep(2)}>
-              <ArrowLeft size={18} color="#FFFFFF" />
-            </TouchableOpacity>
+          {/* Bottom Navigation with Arrow Continue */}
+          <View style={styles.onboardingNavRow}>
             <TouchableOpacity
-              style={[styles.onboardingPrimaryBtn, { flex: 1 }]}
+              style={styles.onboardingBackCircleBtn}
+              onPress={() => setOnboardingStep(2)}
+              activeOpacity={0.75}
+            >
+              <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.4} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.onboardingContinueArrowBtn,
+                totalPct !== 100 && styles.onboardingContinueArrowBtnDisabled,
+              ]}
               onPress={() => {
                 // Initialize default subcategory budgets proportional to the pillar allocations
                 setSetupCategories({
@@ -1058,9 +1203,10 @@ function MainApp() {
                 });
                 setOnboardingStep(4);
               }}
+              disabled={totalPct !== 100}
+              activeOpacity={0.85}
             >
-              <Text style={styles.onboardingPrimaryBtnText}>Continue to Categories</Text>
-              <ChevronRight size={18} color="#090909" strokeWidth={2.5} />
+              <ArrowRight size={24} color={totalPct === 100 ? '#090909' : '#555555'} strokeWidth={3} />
             </TouchableOpacity>
           </View>
         </View>
@@ -4359,5 +4505,253 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
     borderColor: '#1E1E1E',
     opacity: 0.4,
+  },
+  // STEP 2 RATIO SLIDER STYLES
+  ratioVisualizerContainer: {
+    backgroundColor: '#141414',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#222222',
+    padding: 14,
+    marginBottom: 14,
+  },
+  ratioVisualizerBar: {
+    height: 14,
+    borderRadius: 7,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    backgroundColor: '#1E1E1E',
+    gap: 3,
+  },
+  ratioVisualizerSeg: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  ratioVisualizerLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 2,
+  },
+  ratioLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ratioLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  ratioLegendText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#A0A0A0',
+  },
+  ratioPresetsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  ratioPresetChip: {
+    flex: 1,
+    paddingVertical: 9,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#222222',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ratioPresetChipActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  ratioPresetChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8A8A8A',
+  },
+  ratioPresetChipTextActive: {
+    color: '#090909',
+    fontWeight: '800',
+  },
+  ratioSliderCard: {
+    backgroundColor: '#141414',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#222222',
+    padding: 16,
+  },
+  ratioSliderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  ratioPillarDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+  },
+  ratioSliderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  ratioSliderSubtitle: {
+    fontSize: 11.5,
+    color: '#777777',
+    marginTop: 3,
+  },
+  ratioSliderPercent: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  ratioSliderAmount: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8A8A8A',
+    marginTop: 2,
+  },
+  ratioSliderTrackContainer: {
+    paddingVertical: 10,
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  ratioSliderTrackBg: {
+    height: 10,
+    backgroundColor: '#222222',
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  ratioSliderTrackFill: {
+    height: '100%',
+    borderRadius: 5,
+  },
+  ratioSliderThumb: {
+    position: 'absolute',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  ratioStepperRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 4,
+  },
+  ratioStepBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#1A1A1A',
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#262626',
+  },
+  ratioStepBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#A0A0A0',
+  },
+  ratioStatusCard: {
+    backgroundColor: '#141414',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#222222',
+    padding: 14,
+    marginTop: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ratioStatusLabel: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#777777',
+    textTransform: 'uppercase',
+  },
+  ratioStatusValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 2,
+  },
+  ratioBalancedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  ratioBalancedText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#090909',
+  },
+  ratioAutoBalanceBtn: {
+    backgroundColor: '#2A1818',
+    borderWidth: 1,
+    borderColor: '#552222',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  ratioAutoBalanceText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FF6B6B',
+  },
+  onboardingNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+  },
+  onboardingBackCircleBtn: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#242424',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  onboardingContinueArrowBtn: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  onboardingContinueArrowBtnDisabled: {
+    backgroundColor: '#161616',
+    borderWidth: 1,
+    borderColor: '#222222',
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });
