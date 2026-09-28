@@ -214,8 +214,9 @@ function MainApp() {
 
   // Onboarding Setup State (clean zero state)
   const [onboardingStep, setOnboardingStep] = useState(1);
+  const [setupIncomeStr, setSetupIncomeStr] = useState('50000');
   const [setupIncome, setSetupIncome] = useState([
-    { id: '1', name: 'Monthly Salary', amount: '' },
+    { id: '1', name: 'Monthly Salary', amount: '50000' },
   ]);
   const [setupPercent, setSetupPercent] = useState({ needs: 50, wants: 30, savings: 20 });
   const [setupCategories, setSetupCategories] = useState({
@@ -713,11 +714,29 @@ function MainApp() {
     }));
   };
 
+  const handleSetupKeypadPress = (val) => {
+    if (val === 'backspace') {
+      setSetupIncomeStr((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
+      return;
+    }
+    if (val === '.') {
+      if (!setupIncomeStr.includes('.')) {
+        setSetupIncomeStr((prev) => prev + '.');
+      }
+      return;
+    }
+    setSetupIncomeStr((prev) => {
+      if (prev === '0') return val;
+      if (prev.length >= 8) return prev;
+      return prev + val;
+    });
+  };
+
   // ----------------------------------------------------
   // ONBOARDING SETUP FLOW
   // ----------------------------------------------------
   const renderOnboarding = () => {
-    const totalSetupInc = setupIncome.reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
+    const totalSetupInc = parseFloat(setupIncomeStr || '0') || 0;
     const allocNeeds = Math.round((totalSetupInc * setupPercent.needs) / 100);
     const allocWants = Math.round((totalSetupInc * setupPercent.wants) / 100);
     const allocSavings = Math.round((totalSetupInc * setupPercent.savings) / 100);
@@ -842,90 +861,95 @@ function MainApp() {
 
     if (onboardingStep === 2) {
       return (
-        <View style={[styles.onboardingContainer, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+        <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
+          {/* Top Title Only */}
+          <View>
             <Text style={styles.onboardingStepLabel}>STEP 1 OF 3</Text>
             <Text style={styles.onboardingStepTitle}>What is your monthly income?</Text>
-            <Text style={styles.onboardingStepDesc}>Enter your primary salary and any other recurring income.</Text>
+          </View>
 
-            <View style={{ marginTop: 20, gap: 10 }}>
-              {setupIncome.map((s) => (
-                <View key={s.id} style={styles.incomeSourceRow}>
-                  <TextInput
-                    value={s.name}
-                    onChangeText={(val) =>
-                      setSetupIncome(setupIncome.map((item) => (item.id === s.id ? { ...item, name: val } : item)))
-                    }
-                    placeholder="Source (e.g. Salary)"
-                    placeholderTextColor="#666666"
-                    style={styles.incomeSourceInputName}
-                  />
-                  <View style={styles.incomeSourceAmountBox}>
-                    <Text style={{ color: '#8A8A8A', fontWeight: 'bold', fontSize: 14 }}>{data.currency}</Text>
-                    <TextInput
-                      value={s.amount}
-                      onChangeText={(val) =>
-                        setSetupIncome(setupIncome.map((item) => (item.id === s.id ? { ...item, amount: val } : item)))
-                      }
-                      placeholder="0"
-                      placeholderTextColor="#666666"
-                      keyboardType="numeric"
-                      style={styles.incomeSourceInputAmount}
-                    />
-                  </View>
-                  {setupIncome.length > 1 && (
-                    <TouchableOpacity
-                      onPress={() => setSetupIncome(setupIncome.filter((item) => item.id !== s.id))}
-                      style={{ padding: 6, marginLeft: 4 }}
-                    >
-                      <Trash2 size={16} color="#8A8A8A" />
-                    </TouchableOpacity>
-                  )}
-                </View>
+          {/* Large Hero Calculator Display */}
+          <View style={styles.calcHeroDisplay}>
+            <Text style={styles.calcHeroCurrency}>{data.currency}</Text>
+            <Text style={styles.calcHeroAmount} numberOfLines={1}>
+              {parseFloat(setupIncomeStr || '0').toLocaleString('en-IN')}
+            </Text>
+          </View>
+
+          {/* 3-Column Calculator Keypad */}
+          <View style={styles.calcKeypadWrapper}>
+            <View style={styles.calcKeypadRow}>
+              {['1', '2', '3'].map((k) => (
+                <TouchableOpacity
+                  key={k}
+                  style={styles.calcKeypadBtn}
+                  onPress={() => handleSetupKeypadPress(k)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.calcKeypadText}>{k}</Text>
+                </TouchableOpacity>
               ))}
             </View>
-
-            <TouchableOpacity
-              onPress={() =>
-                setSetupIncome([
-                  ...setupIncome,
-                  { id: String(Date.now()), name: 'Freelance / Side Income', amount: '' },
-                ])
-              }
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                backgroundColor: '#141414',
-                borderWidth: 1,
-                borderColor: '#242424',
-                borderRadius: 16,
-                paddingVertical: 14,
-                marginTop: 12,
-              }}
-            >
-              <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-              <Text style={{ color: '#FFFFFF', fontSize: 13.5, fontWeight: 'bold' }}>Add Another Income Source</Text>
-            </TouchableOpacity>
-
-            <View style={styles.incomeTotalBanner}>
-              <Text style={{ fontSize: 12, color: '#8A8A8A', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Total Monthly Income
-              </Text>
-              <Text style={{ fontSize: 34, fontWeight: '900', color: '#FFFFFF', marginTop: 4 }}>
-                {data.currency}{totalSetupInc.toLocaleString('en-IN')}
-              </Text>
+            <View style={styles.calcKeypadRow}>
+              {['4', '5', '6'].map((k) => (
+                <TouchableOpacity
+                  key={k}
+                  style={styles.calcKeypadBtn}
+                  onPress={() => handleSetupKeypadPress(k)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.calcKeypadText}>{k}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          </ScrollView>
+            <View style={styles.calcKeypadRow}>
+              {['7', '8', '9'].map((k) => (
+                <TouchableOpacity
+                  key={k}
+                  style={styles.calcKeypadBtn}
+                  onPress={() => handleSetupKeypadPress(k)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.calcKeypadText}>{k}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.calcKeypadRow}>
+              <TouchableOpacity
+                style={styles.calcKeypadBtn}
+                onPress={() => handleSetupKeypadPress('.')}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.calcKeypadText}>.</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.calcKeypadBtn}
+                onPress={() => handleSetupKeypadPress('0')}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.calcKeypadText}>0</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.calcKeypadBtn}
+                onPress={() => handleSetupKeypadPress('backspace')}
+                activeOpacity={0.75}
+              >
+                <Delete size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-          <View style={{ flexDirection: 'row', gap: 10, paddingTop: 10 }}>
+          {/* Bottom Action */}
+          <View style={{ flexDirection: 'row', gap: 10, paddingTop: 6 }}>
             <TouchableOpacity style={styles.onboardingBackBtn} onPress={() => setOnboardingStep(1)}>
               <ArrowLeft size={18} color="#FFFFFF" />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.onboardingPrimaryBtn, { flex: 1, opacity: totalSetupInc > 0 ? 1 : 0.5 }]}
-              onPress={() => setOnboardingStep(3)}
+              onPress={() => {
+                setSetupIncome([{ id: '1', name: 'Monthly Salary', amount: setupIncomeStr }]);
+                setOnboardingStep(3);
+              }}
               disabled={totalSetupInc <= 0}
             >
               <Text style={styles.onboardingPrimaryBtnText}>Continue to Allocation</Text>
@@ -4270,5 +4294,50 @@ const styles = StyleSheet.create({
     color: '#D6D6D6',
     fontSize: 11.5,
     fontWeight: '600',
+  },
+  // CALCULATOR STEP 1 STYLES
+  calcHeroDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    marginVertical: 8,
+  },
+  calcHeroCurrency: {
+    fontSize: 34,
+    fontWeight: '700',
+    color: '#8A8A8A',
+    marginRight: 6,
+  },
+  calcHeroAmount: {
+    fontSize: 52,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -1,
+  },
+  calcKeypadWrapper: {
+    gap: 10,
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  calcKeypadRow: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  calcKeypadBtn: {
+    flex: 1,
+    height: 64,
+    backgroundColor: '#161616',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#262626',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calcKeypadText: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
 });
