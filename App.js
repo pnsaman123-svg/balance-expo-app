@@ -214,27 +214,6 @@ function OnboardingRatioSliderTrack({ label, percent, amount, color, onPercentCh
           ]}
         />
       </View>
-
-      {/* Precision Steppers */}
-      <View style={styles.ratioStepperRow}>
-        <TouchableOpacity
-          style={styles.ratioStepBtn}
-          onPress={() => onPercentChange(Math.max(0, percent - 5))}
-          activeOpacity={0.7}
-        >
-          <Minus size={13} color="#A0A0A0" />
-          <Text style={styles.ratioStepBtnText}>5%</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.ratioStepBtn}
-          onPress={() => onPercentChange(Math.min(100, percent + 5))}
-          activeOpacity={0.7}
-        >
-          <Plus size={13} color="#A0A0A0" />
-          <Text style={styles.ratioStepBtnText}>5%</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -1073,6 +1052,43 @@ function MainApp() {
               </View>
             </View>
 
+            {/* Ratio Recommendations Below Top Bar */}
+            <View style={styles.recommendationsContainer}>
+              <Text style={styles.recommendationsTitle}>RECOMMENDED RATIOS</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.recommendationsScroll}
+              >
+                {[
+                  { name: 'Standard', ratio: '50 / 30 / 20', n: 50, w: 30, s: 20 },
+                  { name: 'Essential', ratio: '60 / 20 / 20', n: 60, w: 20, s: 20 },
+                  { name: 'Debt Payoff', ratio: '70 / 20 / 10', n: 70, w: 20, s: 10 },
+                  { name: 'Growth', ratio: '40 / 30 / 30', n: 40, w: 30, s: 30 },
+                ].map((r) => {
+                  const isMatch =
+                    setupPercent.needs === r.n &&
+                    setupPercent.wants === r.w &&
+                    setupPercent.savings === r.s;
+                  return (
+                    <TouchableOpacity
+                      key={r.name}
+                      onPress={() => setSetupPercent({ needs: r.n, wants: r.w, savings: r.s })}
+                      style={[styles.recommendationChip, isMatch && styles.recommendationChipActive]}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.recommendationRatio, isMatch && styles.recommendationRatioActive]}>
+                        {r.ratio}
+                      </Text>
+                      <Text style={[styles.recommendationName, isMatch && styles.recommendationNameActive]}>
+                        {r.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
             {/* Horizontal Sliders for Each Pillar (No Subtext) */}
             <View style={{ gap: 12 }}>
               <OnboardingRatioSliderTrack
@@ -1115,9 +1131,7 @@ function MainApp() {
                   activeOpacity={0.85}
                 >
                   <Sparkles size={17} color="#090909" strokeWidth={2.5} />
-                  <Text style={styles.centerAutoFixText}>
-                    Auto Fix ({totalPct > 100 ? `+${totalPct - 100}%` : `-${100 - totalPct}%`})
-                  </Text>
+                  <Text style={styles.centerAutoFixText}>Auto Fix</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.centerBalancedIndicator}>
@@ -4513,6 +4527,52 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#A0A0A0',
   },
+  recommendationsContainer: {
+    marginBottom: 16,
+  },
+  recommendationsTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#777777',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  recommendationsScroll: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  recommendationChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#222222',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recommendationChipActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  recommendationRatio: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: '#D4D4D4',
+  },
+  recommendationRatioActive: {
+    color: '#090909',
+  },
+  recommendationName: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#777777',
+    marginTop: 1,
+  },
+  recommendationNameActive: {
+    color: '#444444',
+  },
   ratioSliderCard: {
     backgroundColor: '#141414',
     borderRadius: 20,
@@ -4574,28 +4634,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 4,
     elevation: 3,
-  },
-  ratioStepperRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 4,
-  },
-  ratioStepBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#1A1A1A',
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#262626',
-  },
-  ratioStepBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#A0A0A0',
   },
   centerAutoFixWrapper: {
     alignItems: 'center',
