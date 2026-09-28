@@ -1052,41 +1052,31 @@ function MainApp() {
               </View>
             </View>
 
-            {/* Ratio Recommendations Below Top Bar */}
-            <View style={styles.recommendationsContainer}>
-              <Text style={styles.recommendationsTitle}>RECOMMENDED RATIOS</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.recommendationsScroll}
-              >
-                {[
-                  { name: 'Standard', ratio: '50 / 30 / 20', n: 50, w: 30, s: 20 },
-                  { name: 'Essential', ratio: '60 / 20 / 20', n: 60, w: 20, s: 20 },
-                  { name: 'Debt Payoff', ratio: '70 / 20 / 10', n: 70, w: 20, s: 10 },
-                  { name: 'Growth', ratio: '40 / 30 / 30', n: 40, w: 30, s: 30 },
-                ].map((r) => {
-                  const isMatch =
-                    setupPercent.needs === r.n &&
-                    setupPercent.wants === r.w &&
-                    setupPercent.savings === r.s;
-                  return (
-                    <TouchableOpacity
-                      key={r.name}
-                      onPress={() => setSetupPercent({ needs: r.n, wants: r.w, savings: r.s })}
-                      style={[styles.recommendationChip, isMatch && styles.recommendationChipActive]}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[styles.recommendationRatio, isMatch && styles.recommendationRatioActive]}>
-                        {r.ratio}
-                      </Text>
-                      <Text style={[styles.recommendationName, isMatch && styles.recommendationNameActive]}>
-                        {r.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+            {/* Ratio Presets Below Top Bar */}
+            <View style={styles.ratioPillsRow}>
+              {[
+                { ratio: '50/30/20', n: 50, w: 30, s: 20 },
+                { ratio: '60/20/20', n: 60, w: 20, s: 20 },
+                { ratio: '70/20/10', n: 70, w: 20, s: 10 },
+                { ratio: '40/30/30', n: 40, w: 30, s: 30 },
+              ].map((r) => {
+                const isMatch =
+                  setupPercent.needs === r.n &&
+                  setupPercent.wants === r.w &&
+                  setupPercent.savings === r.s;
+                return (
+                  <TouchableOpacity
+                    key={r.ratio}
+                    onPress={() => setSetupPercent({ needs: r.n, wants: r.w, savings: r.s })}
+                    style={[styles.ratioPillChip, isMatch && styles.ratioPillChipActive]}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.ratioPillText, isMatch && styles.ratioPillTextActive]}>
+                      {r.ratio}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             {/* Horizontal Sliders for Each Pillar (No Subtext) */}
@@ -4527,24 +4517,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#A0A0A0',
   },
-  recommendationsContainer: {
-    marginBottom: 16,
-  },
-  recommendationsTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#777777',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  recommendationsScroll: {
+  ratioPillsRow: {
     flexDirection: 'row',
     gap: 8,
+    marginBottom: 16,
   },
-  recommendationChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  ratioPillChip: {
+    flex: 1,
+    paddingVertical: 10,
     borderRadius: 14,
     backgroundColor: '#141414',
     borderWidth: 1,
@@ -4552,26 +4532,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  recommendationChipActive: {
+  ratioPillChipActive: {
     backgroundColor: '#FFFFFF',
     borderColor: '#FFFFFF',
   },
-  recommendationRatio: {
+  ratioPillText: {
     fontSize: 12.5,
-    fontWeight: '800',
-    color: '#D4D4D4',
+    fontWeight: '700',
+    color: '#8A8A8A',
   },
-  recommendationRatioActive: {
+  ratioPillTextActive: {
     color: '#090909',
-  },
-  recommendationName: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#777777',
-    marginTop: 1,
-  },
-  recommendationNameActive: {
-    color: '#444444',
+    fontWeight: '800',
   },
   ratioSliderCard: {
     backgroundColor: '#141414',
