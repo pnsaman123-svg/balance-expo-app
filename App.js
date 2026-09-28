@@ -293,6 +293,7 @@ function MainApp() {
   const [activeSetupCat, setActiveSetupCat] = useState('needs');
   const [newSetupSubName, setNewSetupSubName] = useState('');
   const [newSetupSubBudget, setNewSetupSubBudget] = useState('');
+  const [isAddingSetupSub, setIsAddingSetupSub] = useState(false);
 
   // Splash Screen Animated Values
   const [animWords] = useState(new Animated.Value(0));
@@ -1259,40 +1260,83 @@ function MainApp() {
               )}
             </View>
 
-            {/* Add Custom Category Card */}
-            <View style={styles.addSubFormBox}>
-              <Text style={{ fontSize: 12.5, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 10 }}>
-                + Add Custom {activeSetupCat === 'needs' ? 'Need' : activeSetupCat === 'wants' ? 'Want' : 'Savings'} Category
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                <TextInput
-                  value={newSetupSubName}
-                  onChangeText={setNewSetupSubName}
-                  placeholder="e.g. Gym, Pet Care, Gifts"
-                  placeholderTextColor="#666666"
-                  style={[styles.incomeSourceInputName, { flex: 1, backgroundColor: '#141414', borderWidth: 1, borderColor: '#242424', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }]}
-                />
-                <View style={[styles.incomeSourceAmountBox, { width: 95 }]}>
-                  <Text style={{ color: '#8A8A8A', fontWeight: 'bold', fontSize: 12 }}>{data.currency}</Text>
-                  <TextInput
-                    value={newSetupSubBudget}
-                    onChangeText={setNewSetupSubBudget}
-                    placeholder="0"
-                    placeholderTextColor="#666666"
-                    keyboardType="numeric"
-                    style={[styles.incomeSourceInputAmount, { width: 65 }]}
-                  />
-                </View>
+            {/* Centered Add Category CTA & Expandable Form */}
+            {!isAddingSetupSub ? (
+              <View style={styles.centerAddCategoryWrapper}>
                 <TouchableOpacity
-                  onPress={handleAddSetupSubcategory}
-                  disabled={!newSetupSubName.trim()}
-                  style={[styles.actionPillWhite, { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, opacity: newSetupSubName.trim() ? 1 : 0.4 }]}
+                  style={styles.centerAddCategoryBtn}
+                  onPress={() => {
+                    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+                      UIManager.setLayoutAnimationEnabledExperimental(true);
+                    }
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setIsAddingSetupSub(true);
+                  }}
+                  activeOpacity={0.8}
                 >
-                  <Plus size={14} color="#090909" strokeWidth={3} />
-                  <Text style={[styles.actionPillWhiteText, { fontSize: 12.5 }]}>Add</Text>
+                  <Plus size={16} color="#FFFFFF" strokeWidth={2.6} />
+                  <Text style={styles.centerAddCategoryBtnText}>Add Category</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            ) : (
+              <View style={styles.addSubFormBox}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
+                    + New {activeSetupCat === 'needs' ? 'Need' : activeSetupCat === 'wants' ? 'Want' : 'Savings'}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+                        UIManager.setLayoutAnimationEnabledExperimental(true);
+                      }
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      setIsAddingSetupSub(false);
+                      setNewSetupSubName('');
+                      setNewSetupSubBudget('');
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <X size={18} color="#8A8A8A" />
+                  </TouchableOpacity>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                  <TextInput
+                    value={newSetupSubName}
+                    onChangeText={setNewSetupSubName}
+                    placeholder="e.g. Gym, Pet Care, Gifts"
+                    placeholderTextColor="#666666"
+                    autoFocus
+                    style={[styles.incomeSourceInputName, { flex: 1, backgroundColor: '#141414', borderWidth: 1, borderColor: '#242424', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }]}
+                  />
+                  <View style={[styles.incomeSourceAmountBox, { width: 95 }]}>
+                    <Text style={{ color: '#8A8A8A', fontWeight: 'bold', fontSize: 12 }}>{data.currency}</Text>
+                    <TextInput
+                      value={newSetupSubBudget}
+                      onChangeText={setNewSetupSubBudget}
+                      placeholder="0"
+                      placeholderTextColor="#666666"
+                      keyboardType="numeric"
+                      style={[styles.incomeSourceInputAmount, { width: 65 }]}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      handleAddSetupSubcategory();
+                      if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+                        UIManager.setLayoutAnimationEnabledExperimental(true);
+                      }
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      setIsAddingSetupSub(false);
+                    }}
+                    disabled={!newSetupSubName.trim()}
+                    style={[styles.actionPillWhite, { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, opacity: newSetupSubName.trim() ? 1 : 0.4 }]}
+                  >
+                    <Plus size={14} color="#090909" strokeWidth={3} />
+                    <Text style={[styles.actionPillWhiteText, { fontSize: 12.5 }]}>Add</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </ScrollView>
 
           {/* Step 4 Footer Navigation */}
