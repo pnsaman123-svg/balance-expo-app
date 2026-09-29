@@ -1149,9 +1149,9 @@ function MainApp() {
     if (onboardingStep === 2) {
       return (
         <View style={[styles.onboardingContainer, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 12, justifyContent: 'space-between', paddingHorizontal: 16 }]}>
-          {/* Top Title Only */}
-          <View style={{ paddingTop: 6 }}>
-            <Text style={styles.onboardingStepTitle}>Monthly Net Income</Text>
+          {/* Top Title Only (Center Aligned) */}
+          <View style={{ paddingTop: 6, alignItems: 'center' }}>
+            <Text style={[styles.onboardingStepTitle, { textAlign: 'center' }]}>Monthly Net Income</Text>
           </View>
 
           {/* Large Hero Calculator Display with Caret */}
@@ -1276,9 +1276,9 @@ function MainApp() {
       return (
         <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-            {/* Header Title Only (No Subtext) */}
-            <View style={{ paddingTop: 6, marginBottom: 18 }}>
-              <Text style={styles.onboardingStepTitle}>Target Allocation Strategy</Text>
+            {/* Header Title Only (Centered) */}
+            <View style={{ paddingTop: 6, marginBottom: 18, alignItems: 'center' }}>
+              <Text style={[styles.onboardingStepTitle, { textAlign: 'center' }]}>Target Allocation Strategy</Text>
             </View>
 
             {/* Horizontal Segmented Ratio Visualizer Bar */}
@@ -1307,10 +1307,10 @@ function MainApp() {
             {/* Ratio Presets Below Top Bar */}
             <View style={styles.ratioPillsRow}>
               {[
-                { ratio: '50/30/20 (Balanced)', n: 50, w: 30, s: 20 },
-                { ratio: '60/20/20 (Essentials)', n: 60, w: 20, s: 20 },
-                { ratio: '70/20/10 (Frugal)', n: 70, w: 20, s: 10 },
-                { ratio: '40/30/30 (Saver)', n: 40, w: 30, s: 30 },
+                { ratio: '50/30/20', n: 50, w: 30, s: 20 },
+                { ratio: '60/20/20', n: 60, w: 20, s: 20 },
+                { ratio: '70/20/10', n: 70, w: 20, s: 10 },
+                { ratio: '40/30/30', n: 40, w: 30, s: 30 },
               ].map((r) => {
                 const isMatch =
                   setupPercent.needs === r.n &&
@@ -1379,8 +1379,7 @@ function MainApp() {
                 </TouchableOpacity>
               ) : (
                 <View style={styles.centerBalancedIndicator}>
-                  <Check size={16} color="#FFFFFF" strokeWidth={2.8} />
-                  <Text style={styles.centerBalancedText}>✓ 100% Fully Allocated ({formatCurr(totalSetupInc)})</Text>
+                  <Text style={styles.centerBalancedText}>100% Fully Allocated</Text>
                 </View>
               )}
             </View>
@@ -2915,10 +2914,10 @@ function MainApp() {
                 <Text style={styles.lightSectionHeader}>QUICK PRESETS</Text>
                 <View style={styles.lightPresetRow}>
                   {[
-                    { label: '50/30/20 (Balanced)', n: 50, w: 30, s: 20 },
-                    { label: '60/20/20 (Essentials)', n: 60, w: 20, s: 20 },
-                    { label: '70/20/10 (Frugal)', n: 70, w: 20, s: 10 },
-                    { label: '40/30/30 (Saver)', n: 40, w: 30, s: 30 },
+                    { label: '50/30/20', n: 50, w: 30, s: 20 },
+                    { label: '60/20/20', n: 60, w: 20, s: 20 },
+                    { label: '70/20/10', n: 70, w: 20, s: 10 },
+                    { label: '40/30/30', n: 40, w: 30, s: 30 },
                   ].map((p) => {
                     const isSelected =
                       customPercent.needs === p.n &&
@@ -2984,12 +2983,9 @@ function MainApp() {
                   const isBalanced = totalPct === 100;
                   return (
                     <View style={[styles.lightValidationBox, isBalanced ? styles.lightValidationBalanced : styles.lightValidationWarning]}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Check size={14} color="#090909" strokeWidth={3} />
-                        <Text style={styles.lightValidationText}>
-                          {isBalanced ? '100% Total · Fully Allocated' : `Total is ${totalPct}% (${100 - totalPct > 0 ? (100 - totalPct) + '% unallocated' : (totalPct - 100) + '% over'})`}
-                        </Text>
-                      </View>
+                      <Text style={styles.lightValidationText}>
+                        {isBalanced ? '100% Total · Fully Allocated' : `Total is ${totalPct}% (${100 - totalPct > 0 ? (100 - totalPct) + '% unallocated' : (totalPct - 100) + '% over'})`}
+                      </Text>
                       <Text style={styles.lightValidationAmount}>
                         {formatCurr(
                           Math.round((calculations.totalIncome * customPercent.needs) / 100) +
@@ -5110,8 +5106,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ratioPillChipActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderColor: '#FFFFFF',
+    borderWidth: 1.5,
   },
   ratioPillText: {
     fontSize: 12.5,
@@ -5119,7 +5116,7 @@ const styles = StyleSheet.create({
     color: '#8A8A8A',
   },
   ratioPillTextActive: {
-    color: '#090909',
+    color: '#FFFFFF',
     fontWeight: '800',
   },
   ratioSliderCard: {
