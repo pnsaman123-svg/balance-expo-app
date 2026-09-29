@@ -1083,8 +1083,22 @@ function MainApp() {
     }
 
     if (onboardingStep === 3) {
-      const isBalanced = totalAlloc === totalSetupInc && (setupPercent.needs + setupPercent.wants + setupPercent.savings === 100);
-      const totalPct = setupPercent.needs + setupPercent.wants + setupPercent.savings;
+      const totalPct = (setupPercent.needs || 0) + (setupPercent.wants || 0) + (setupPercent.savings || 0);
+      const isBalanced = totalPct === 100;
+
+      const autoFixPercentages = (needs, wants, savings) => {
+        const n = Math.max(0, Math.min(100, Math.round(Number(needs) || 0)));
+        const w = Math.max(0, Math.min(100, Math.round(Number(wants) || 0)));
+        if (n >= 100) {
+          return { needs: 80, wants: 10, savings: 10 };
+        }
+        if (n + w >= 100) {
+          const adjW = Math.max(5, 100 - n - 5);
+          const adjS = Math.max(0, 100 - n - adjW);
+          return { needs: n, wants: adjW, savings: adjS };
+        }
+        return { needs: n, wants: w, savings: 100 - n - w };
+      };
 
       return (
         <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
@@ -1180,24 +1194,26 @@ function MainApp() {
                 <TouchableOpacity
                   style={styles.centerAutoFixCta}
                   onPress={() => {
-                    const rem = Math.max(0, 100 - setupPercent.needs - setupPercent.wants);
-                    setSetupPercent((prev) => ({ ...prev, savings: rem }));
+                    const fixed = autoFixPercentages(setupPercent.needs, setupPercent.wants, setupPercent.savings);
+                    setSetupPercent(fixed);
                   }}
                   activeOpacity={0.85}
                 >
                   <Sparkles size={17} color="#090909" strokeWidth={2.5} />
-                  <Text style={styles.centerAutoFixText}>Auto Fix</Text>
+                  <Text style={styles.centerAutoFixText}>
+                    Auto Fix to 100% ({totalPct > 100 ? `+${totalPct - 100}% over` : `${100 - totalPct}% left`})
+                  </Text>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.centerBalancedIndicator}>
                   <Check size={16} color="#FFFFFF" strokeWidth={2.8} />
-                  <Text style={styles.centerBalancedText}>100% Balanced ({formatCurr(totalAlloc)})</Text>
+                  <Text style={styles.centerBalancedText}>✓ 100% Balanced ({formatCurr(totalSetupInc)})</Text>
                 </View>
               )}
             </View>
           </ScrollView>
 
-          {/* Bottom Navigation with Arrow Continue */}
+          {/* Bottom Navigation with Highlighted Continue CTA */}
           <View style={styles.onboardingNavRow}>
             <TouchableOpacity
               style={styles.onboardingBackCircleBtn}
@@ -1210,36 +1226,50 @@ function MainApp() {
             <TouchableOpacity
               style={[
                 styles.onboardingContinueArrowBtn,
-                totalPct !== 100 && styles.onboardingContinueArrowBtnDisabled,
+                !isBalanced && styles.onboardingContinueArrowBtnDisabled,
               ]}
               onPress={() => {
+                let currentPct = setupPercent;
+                if (!isBalanced) {
+                  currentPct = autoFixPercentages(setupPercent.needs, setupPercent.wants, setupPercent.savings);
+                  setSetupPercent(currentPct);
+                }
+
+                const effectiveNeeds = Math.round((totalSetupInc * currentPct.needs) / 100);
+                const effectiveWants = Math.round((totalSetupInc * currentPct.wants) / 100);
+                const effectiveSavings = Math.round((totalSetupInc * currentPct.savings) / 100);
+
                 // Initialize default subcategory budgets proportional to the pillar allocations
                 setSetupCategories({
                   needs: [
-                    { id: 'sub-rent', name: 'Rent', budget: String(Math.round(allocNeeds * 0.4)), icon: 'House' },
-                    { id: 'sub-groceries', name: 'Groceries', budget: String(Math.round(allocNeeds * 0.25)), icon: 'ShoppingBasket' },
-                    { id: 'sub-utilities', name: 'Utilities', budget: String(Math.round(allocNeeds * 0.15)), icon: 'Zap' },
-                    { id: 'sub-transport', name: 'Transportation', budget: String(Math.round(allocNeeds * 0.12)), icon: 'Car' },
-                    { id: 'sub-medical', name: 'Medical', budget: String(Math.round(allocNeeds * 0.08)), icon: 'Activity' },
+                    { id: 'sub-rent', name: 'Rent', budget: String(Math.round(effectiveNeeds * 0.4)), icon: 'House' },
+                    { id: 'sub-groceries', name: 'Groceries', budget: String(Math.round(effectiveNeeds * 0.25)), icon: 'ShoppingBasket' },
+                    { id: 'sub-utilities', name: 'Utilities', budget: String(Math.round(effectiveNeeds * 0.15)), icon: 'Zap' },
+                    { id: 'sub-transport', name: 'Transportation', budget: String(Math.round(effectiveNeeds * 0.12)), icon: 'Car' },
+                    { id: 'sub-medical', name: 'Medical', budget: String(Math.round(effectiveNeeds * 0.08)), icon: 'Activity' },
                   ],
                   wants: [
-                    { id: 'sub-dining', name: 'Dining Out', budget: String(Math.round(allocWants * 0.35)), icon: 'UtensilsCrossed' },
-                    { id: 'sub-shopping', name: 'Shopping', budget: String(Math.round(allocWants * 0.3)), icon: 'ShoppingBag' },
-                    { id: 'sub-subscriptions', name: 'Subscriptions', budget: String(Math.round(allocWants * 0.15)), icon: 'Repeat' },
-                    { id: 'sub-leisure', name: 'Leisure', budget: String(Math.round(allocWants * 0.2)), icon: 'Gamepad2' },
+                    { id: 'sub-dining', name: 'Dining Out', budget: String(Math.round(effectiveWants * 0.35)), icon: 'UtensilsCrossed' },
+                    { id: 'sub-shopping', name: 'Shopping', budget: String(Math.round(effectiveWants * 0.3)), icon: 'ShoppingBag' },
+                    { id: 'sub-subscriptions', name: 'Subscriptions', budget: String(Math.round(effectiveWants * 0.15)), icon: 'Repeat' },
+                    { id: 'sub-leisure', name: 'Leisure', budget: String(Math.round(effectiveWants * 0.2)), icon: 'Gamepad2' },
                   ],
                   savings: [
-                    { id: 'sub-emergency', name: 'Emergency Fund', budget: String(Math.round(allocSavings * 0.4)), icon: 'ShieldCheck' },
-                    { id: 'sub-investments', name: 'Investments', budget: String(Math.round(allocSavings * 0.4)), icon: 'TrendingUp' },
-                    { id: 'sub-debt', name: 'Debt Repayment', budget: String(Math.round(allocSavings * 0.2)), icon: 'ArrowDownRight' },
+                    { id: 'sub-emergency', name: 'Emergency Fund', budget: String(Math.round(effectiveSavings * 0.4)), icon: 'ShieldCheck' },
+                    { id: 'sub-investments', name: 'Investments', budget: String(Math.round(effectiveSavings * 0.4)), icon: 'TrendingUp' },
+                    { id: 'sub-debt', name: 'Debt Repayment', budget: String(Math.round(effectiveSavings * 0.2)), icon: 'ArrowDownRight' },
                   ],
                 });
                 setOnboardingStep(4);
               }}
-              disabled={totalPct !== 100}
               activeOpacity={0.85}
             >
-              <ArrowRight size={24} color={totalPct === 100 ? '#090909' : '#555555'} strokeWidth={3} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16 }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: isBalanced ? '#090909' : '#FFFFFF' }}>
+                  Continue
+                </Text>
+                <ArrowRight size={18} color={isBalanced ? '#090909' : '#FFFFFF'} strokeWidth={3} />
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -4926,9 +4956,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   onboardingContinueArrowBtn: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    minWidth: 130,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -4939,9 +4969,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   onboardingContinueArrowBtnDisabled: {
-    backgroundColor: '#161616',
+    backgroundColor: '#202020',
     borderWidth: 1,
-    borderColor: '#222222',
+    borderColor: '#303030',
     shadowOpacity: 0,
     elevation: 0,
   },
