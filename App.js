@@ -20,12 +20,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Rect, Path, Circle, G } from 'react-native-svg';
 import {
   useFonts,
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from '@expo-google-fonts/plus-jakarta-sans';
+  Poppins_300Light,
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+  Poppins_900Black,
+} from '@expo-google-fonts/poppins';
 import {
   Home,
   Receipt,
@@ -3054,25 +3056,29 @@ function MainApp() {
   );
 }
 
-// Apply Premium Plus Jakarta Sans as default font across the entire mobile app
+// Apply Premium Poppins as default font across the entire mobile app
 if (Text.defaultProps == null) Text.defaultProps = {};
-Text.defaultProps.style = { fontFamily: 'PlusJakartaSans_500Medium' };
+Text.defaultProps.style = { fontFamily: 'Poppins_500Medium' };
 
 if (TextInput.defaultProps == null) TextInput.defaultProps = {};
-TextInput.defaultProps.style = { fontFamily: 'PlusJakartaSans_500Medium' };
+TextInput.defaultProps.style = { fontFamily: 'Poppins_500Medium' };
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
-    'PlusJakartaSans-Regular': PlusJakartaSans_400Regular,
-    'PlusJakartaSans-Medium': PlusJakartaSans_500Medium,
-    'PlusJakartaSans-SemiBold': PlusJakartaSans_600SemiBold,
-    'PlusJakartaSans-Bold': PlusJakartaSans_700Bold,
-    'PlusJakartaSans-ExtraBold': PlusJakartaSans_800ExtraBold,
+    Poppins_300Light,
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+    Poppins_900Black,
+    'Poppins-Light': Poppins_300Light,
+    'Poppins-Regular': Poppins_400Regular,
+    'Poppins-Medium': Poppins_500Medium,
+    'Poppins-SemiBold': Poppins_600SemiBold,
+    'Poppins-Bold': Poppins_700Bold,
+    'Poppins-ExtraBold': Poppins_800ExtraBold,
+    'Poppins-Black': Poppins_900Black,
   });
 
   if (!fontsLoaded) {
