@@ -1663,34 +1663,23 @@ function MainApp() {
               paddingBottom: Math.max(16, insets.bottom + 85),
             }}
           >
-            {/* Centered INR & Amount between Top Bar and Num Pad */}
+            {/* Middle Section: INR on Left & Big Amount on Right (End-to-End Horizontally, Centered Vertically) */}
             <View style={styles.homeAmountCenterWrapper}>
-              <View style={styles.homeAmountCenterRow}>
-                <Text style={styles.homeCurrencyIsoCodeCenter}>{currencyIsoCode}</Text>
+              <View style={styles.homeAmountEndToEndRow}>
+                <Text style={styles.homeCurrencyIsoCode}>{currencyIsoCode}</Text>
 
-                <View style={styles.homeAmountSplitTextRowCenter}>
-                  <Text style={styles.homeAmountBigIntegerCenter} numberOfLines={1}>
+                <View style={styles.homeAmountSplitTextRow}>
+                  <Text style={styles.homeAmountBigInteger} numberOfLines={1}>
                     {splitAmount.intStr}
                   </Text>
-                  <Text style={styles.homeAmountSmallFractionCenter}>{splitAmount.decStr}</Text>
+                  <Text style={styles.homeAmountSmallFraction}>{splitAmount.decStr}</Text>
                 </View>
-
-                {homeAmountStr !== '0' && (
-                  <TouchableOpacity
-                    onPress={() => handleHomeKeypadPress('backspace')}
-                    onLongPress={() => setHomeAmountStr('0')}
-                    style={styles.homeInlineDeleteBtnCenter}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  >
-                    <Delete size={20} color="#8E8E93" strokeWidth={2.2} />
-                  </TouchableOpacity>
-                )}
               </View>
             </View>
 
             {/* Expanded Height Keypad Container Card */}
             <View style={styles.homeKeypadContainerCard}>
-              {/* Total Balance Pill Overlapping Top Edge */}
+              {/* Total Balance Pill Overlapping Top Edge (Pushed Higher) */}
               <View style={styles.homeTotalBalancePillBadge}>
                 <Text style={styles.homeTotalBalancePillLabel}>Total Balance: </Text>
                 <Text style={styles.homeTotalBalancePillValue}>
@@ -1742,14 +1731,14 @@ function MainApp() {
                   ))}
                 </View>
 
-                {/* Row 4: . | 0 | Action (Tick / Delete) */}
+                {/* Row 4: Backspace (in place of .) | 0 | Action Tick */}
                 <View style={styles.homeKeyTileRow}>
                   <TouchableOpacity
                     style={styles.homeKeyTileBtn}
-                    onPress={() => handleHomeKeypadPress('.')}
+                    onPress={() => handleHomeKeypadPress('backspace')}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.homeKeyTileNum}>.</Text>
+                    <Delete size={26} color="#FFFFFF" strokeWidth={2.4} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1768,17 +1757,16 @@ function MainApp() {
                     onPress={() => {
                       if (parseFloat(homeAmountStr || '0') > 0) {
                         handleQuickAddExpense();
-                      } else {
-                        handleHomeKeypadPress('backspace');
                       }
                     }}
+                    disabled={parseFloat(homeAmountStr || '0') <= 0}
                     activeOpacity={0.8}
                   >
-                    {parseFloat(homeAmountStr || '0') > 0 ? (
-                      <Check size={28} color="#000000" strokeWidth={3} />
-                    ) : (
-                      <Delete size={24} color="#71717A" strokeWidth={2.2} />
-                    )}
+                    <Check
+                      size={28}
+                      color={parseFloat(homeAmountStr || '0') > 0 ? '#000000' : '#44444A'}
+                      strokeWidth={3}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -5090,57 +5078,50 @@ const styles = StyleSheet.create({
   homeAmountCenterWrapper: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 14,
+    width: '100%',
+    paddingHorizontal: 6,
   },
-  homeAmountCenterRow: {
+  homeAmountEndToEndRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'baseline',
-    justifyContent: 'center',
-    gap: 8,
+    width: '100%',
   },
-  homeCurrencyIsoCodeCenter: {
-    fontSize: 34,
+  homeCurrencyIsoCode: {
+    fontSize: 36,
     fontWeight: '800',
     color: '#71717A',
     letterSpacing: 0.5,
   },
-  homeAmountSplitTextRowCenter: {
+  homeAmountSplitTextRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-  homeAmountBigIntegerCenter: {
+  homeAmountBigInteger: {
     fontSize: 58,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -1,
   },
-  homeAmountSmallFractionCenter: {
+  homeAmountSmallFraction: {
     fontSize: 24,
     fontWeight: '700',
     color: '#8E8E93',
     marginLeft: 2,
-  },
-  homeInlineDeleteBtnCenter: {
-    padding: 6,
-    marginLeft: 6,
-    backgroundColor: '#1C1C20',
-    borderRadius: 12,
-    alignSelf: 'center',
   },
   homeKeypadContainerCard: {
     backgroundColor: '#151518',
     borderRadius: 32,
     paddingHorizontal: 12,
     paddingBottom: 16,
-    paddingTop: 28,
+    paddingTop: 32,
     borderWidth: 1,
     borderColor: '#222228',
     position: 'relative',
   },
   homeTotalBalancePillBadge: {
     position: 'absolute',
-    top: -18,
+    top: -24,
     alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
@@ -5154,8 +5135,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
-    elevation: 6,
-    zIndex: 10,
+    elevation: 8,
+    zIndex: 20,
   },
   homeTotalBalancePillLabel: {
     fontSize: 13,
