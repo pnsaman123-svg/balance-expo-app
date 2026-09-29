@@ -376,6 +376,43 @@ function SplashRollingCarousel() {
   );
 }
 
+function BlinkingCaret({ height = 44, color = '#FFFFFF', width = 3 }) {
+  const blinkAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(blinkAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(blinkAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  return (
+    <Animated.View
+      style={{
+        width,
+        height,
+        backgroundColor: color,
+        borderRadius: width / 2,
+        marginLeft: 4,
+        opacity: blinkAnim,
+        alignSelf: 'center',
+      }}
+    />
+  );
+}
+
 function MainApp() {
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -473,7 +510,7 @@ function MainApp() {
 
   // Onboarding Setup State (clean zero state)
   const [onboardingStep, setOnboardingStep] = useState(1);
-  const [setupIncomeStr, setSetupIncomeStr] = useState('0');
+  const [setupIncomeStr, setSetupIncomeStr] = useState('');
   const [setupIncome, setSetupIncome] = useState([
     { id: '1', name: 'Monthly Salary', amount: '0' },
   ]);
@@ -997,17 +1034,17 @@ function MainApp() {
 
   const handleSetupKeypadPress = (val) => {
     if (val === 'backspace') {
-      setSetupIncomeStr((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
+      setSetupIncomeStr((prev) => (prev && prev.length > 0 ? prev.slice(0, -1) : ''));
       return;
     }
     if (val === '.') {
       if (!setupIncomeStr.includes('.')) {
-        setSetupIncomeStr((prev) => prev + '.');
+        setSetupIncomeStr((prev) => (prev ? prev + '.' : '0.'));
       }
       return;
     }
     setSetupIncomeStr((prev) => {
-      if (prev === '0') return val;
+      if (!prev || prev === '0') return val;
       if (prev.length >= 8) return prev;
       return prev + val;
     });
@@ -1108,7 +1145,7 @@ function MainApp() {
               <TouchableOpacity
                 style={styles.splashPrimaryBtn}
                 onPress={() => {
-                  setSetupIncomeStr('0');
+                  setSetupIncomeStr('');
                   setOnboardingStep(2);
                 }}
                 activeOpacity={0.88}
@@ -1129,12 +1166,15 @@ function MainApp() {
             <Text style={styles.onboardingStepTitle}>Monthly Net Income</Text>
           </View>
 
-          {/* Large Hero Calculator Display */}
+          {/* Large Hero Calculator Display with Caret */}
           <View style={styles.calcHeroDisplay}>
             <Text style={styles.calcHeroCurrency}>{data.currency}</Text>
-            <Text style={styles.calcHeroAmount} numberOfLines={1}>
-              {parseFloat(setupIncomeStr || '0').toLocaleString('en-IN')}
-            </Text>
+            {setupIncomeStr ? (
+              <Text style={styles.calcHeroAmount} numberOfLines={1}>
+                {parseFloat(setupIncomeStr).toLocaleString('en-IN')}
+              </Text>
+            ) : null}
+            <BlinkingCaret height={46} color="#FFFFFF" width={3} />
           </View>
 
           {/* Filled Bottom Calculator Keypad (4 Rows) */}
