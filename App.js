@@ -1596,12 +1596,11 @@ function MainApp() {
             width: SCREEN_WIDTH,
             paddingHorizontal: 20,
             flex: 1,
-            justifyContent: 'space-between',
             paddingBottom: Math.max(20, insets.bottom + 85),
           }}
         >
-          {/* Top Section */}
-          <View style={{ paddingTop: 10 }}>
+          {/* Top Section (flex: 1 centered) */}
+          <View style={{ flex: 1, justifyContent: 'center' }}>
             {/* Remaining Balance Pill in Center */}
             <View style={styles.centerBalancePillWrapper}>
               <View style={styles.centerBalancePill}>
@@ -1613,7 +1612,7 @@ function MainApp() {
             </View>
 
             {/* Big Amount Display */}
-            <View style={[styles.homeAmountDisplaySection, { marginTop: 24, marginBottom: 10 }]}>
+            <View style={[styles.homeAmountDisplaySection, { marginTop: 16, marginBottom: 8 }]}>
               <Text style={styles.homeAmountCurrency}>{data.currency}</Text>
               <Text style={styles.homeAmountDigits} numberOfLines={1}>
                 {parseFloat(homeAmountStr || '0').toLocaleString('en-IN')}
@@ -1621,26 +1620,26 @@ function MainApp() {
             </View>
           </View>
 
-          {/* Bottom Section: Carousel Swipe Dots (Just Above Num Pad) + Big Number Pad */}
-          <View style={{ gap: 10 }}>
-            {/* Carousel Dots Indicator Just Above Num Pad */}
-            <View style={styles.homeCarouselDotsWrapper}>
-              <TouchableOpacity
-                onPress={() => {
-                  setHomeSlide(0);
-                  homeScrollRef.current?.scrollTo({ x: 0, animated: true });
-                }}
-                style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
-              />
-              <TouchableOpacity
-                onPress={() => {
-                  setHomeSlide(1);
-                  homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-                }}
-                style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
-              />
-            </View>
+          {/* Carousel Dots Indicator (Exact Same Vertical Position on Both Slides) */}
+          <View style={styles.homeCarouselDotsWrapper}>
+            <TouchableOpacity
+              onPress={() => {
+                setHomeSlide(0);
+                homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+              }}
+              style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setHomeSlide(1);
+                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+              }}
+              style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
+            />
+          </View>
 
+          {/* Bottom Section: Fixed Height 325 Keypad */}
+          <View style={{ height: 325, justifyContent: 'center' }}>
             <View style={styles.calcKeypadWrapperFilled}>
               {/* Row 1 */}
               <View style={styles.calcKeypadRow}>
@@ -1728,13 +1727,12 @@ function MainApp() {
             width: SCREEN_WIDTH,
             paddingHorizontal: 20,
             flex: 1,
-            justifyContent: 'space-between',
             paddingBottom: Math.max(20, insets.bottom + 85),
           }}
         >
-          {/* Top Section: Monthly Budget Card */}
-          <View style={{ paddingTop: 10 }}>
-            <View style={styles.charcoalBudgetCard}>
+          {/* Top Section (flex: 1 centered) */}
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <View style={[styles.charcoalBudgetCard, { marginBottom: 0 }]}>
               <View style={styles.cardHeaderRow}>
                 <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
                 <View style={styles.budgetPercentPill}>
@@ -1765,28 +1763,27 @@ function MainApp() {
             </View>
           </View>
 
-          {/* Bottom Section: Carousel Dots in Same Spot + Recent Transactions Below Down */}
-          <View style={{ gap: 10 }}>
-            {/* Carousel Dots Indicator in exact same spot as Slide 0 */}
-            <View style={styles.homeCarouselDotsWrapper}>
-              <TouchableOpacity
-                onPress={() => {
-                  setHomeSlide(0);
-                  homeScrollRef.current?.scrollTo({ x: 0, animated: true });
-                }}
-                style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
-              />
-              <TouchableOpacity
-                onPress={() => {
-                  setHomeSlide(1);
-                  homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-                }}
-                style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
-              />
-            </View>
+          {/* Carousel Dots Indicator (Exact Same Vertical Position on Both Slides) */}
+          <View style={styles.homeCarouselDotsWrapper}>
+            <TouchableOpacity
+              onPress={() => {
+                setHomeSlide(0);
+                homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+              }}
+              style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setHomeSlide(1);
+                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+              }}
+              style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
+            />
+          </View>
 
-            {/* Recent Transactions Charcoal Card (Matches Keypad Height) */}
-            <View style={[styles.charcoalBudgetCard, { height: 280, padding: 14 }]}>
+          {/* Bottom Section: Fixed Height 325 Recent Transactions Card */}
+          <View style={{ height: 325 }}>
+            <View style={[styles.charcoalBudgetCard, { height: 325, padding: 14, marginBottom: 0 }]}>
               <View style={styles.cardHeaderRow}>
                 <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
                 <TouchableOpacity onPress={() => setCurrentTab('budget')}>
