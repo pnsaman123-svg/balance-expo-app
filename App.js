@@ -458,16 +458,16 @@ function MainApp() {
 
   // Home Screen Slide & Quick Entry State
   const [homeSlide, setHomeSlide] = useState(0); // 0: Quick Entry Keypad, 1: Monthly Budget & Recent Tx
-  const [homeAmountStr, setHomeAmountStr] = useState('0');
+  const [homeAmountStr, setHomeAmountStr] = useState('');
   const [homeCatId, setHomeCatId] = useState('needs');
 
   const handleHomeKeypadPress = (val) => {
     if (val === 'backspace') {
-      setHomeAmountStr((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
+      setHomeAmountStr((prev) => (prev && prev.length > 0 ? prev.slice(0, -1) : ''));
       return;
     }
     setHomeAmountStr((prev) => {
-      if (prev === '0') return val;
+      if (!prev && val === '0') return '';
       if (prev.length >= 8) return prev;
       return prev + val;
     });
@@ -480,6 +480,7 @@ function MainApp() {
     setAmountStr(homeAmountStr);
     setEntryType('expense');
     setIsAddExpenseOpen(true);
+    setHomeAmountStr('');
   };
 
   // Keypad & Transaction Entry State (starts at 0)
@@ -1812,9 +1813,11 @@ function MainApp() {
                 <Text style={styles.homeCurrencyIsoCode}>{currencyIsoCode}</Text>
 
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={styles.homeAmountBigInteger} numberOfLines={1}>
-                    {data.currency}{parseFloat(homeAmountStr || '0').toLocaleString('en-IN')}
-                  </Text>
+                  {homeAmountStr ? (
+                    <Text style={styles.homeAmountBigInteger} numberOfLines={1}>
+                      {data.currency}{parseFloat(homeAmountStr).toLocaleString('en-IN')}
+                    </Text>
+                  ) : null}
                   <BlinkingCaret height={46} color="#FFFFFF" width={3} />
                 </View>
               </View>
@@ -2441,23 +2444,7 @@ function MainApp() {
                   style={styles.budgetCardContent}
                 >
                   <View style={styles.budgetCardLeft}>
-                    {/* Soft Tinted Icon Box */}
-                    <View style={[styles.budgetIconBox, { backgroundColor: pillarColors.bg }]}>
-                      <RenderCategoryIcon
-                        iconName={cat.id === 'needs' ? 'House' : cat.id === 'wants' ? 'ShoppingBag' : 'ShieldCheck'}
-                        size={18}
-                        color={pillarColors.iconColor}
-                        bgColor="transparent"
-                      />
-                    </View>
-
-                    {/* Category Name & Subtitle */}
-                    <View style={styles.budgetTitleRow}>
-                      <Text style={styles.budgetCardTitle}>{cat.name}</Text>
-                      <Text style={styles.budgetCardSubtitle}>
-                        {daysLeft}d left • {catStat.percentSpent}% spent
-                      </Text>
-                    </View>
+                    <Text style={styles.budgetCardTitle}>{cat.name}</Text>
                   </View>
 
                   {/* Right Amount & Status */}
@@ -2492,7 +2479,6 @@ function MainApp() {
                           isOverBudget: false,
                           overAmount: 0,
                         };
-                        const subColors = getSubcategoryColors(sub.id, sub.icon);
                         const isSubOver = subStat.isOverBudget;
                         const subRemaining = subStat.remaining;
                         const subOverAmount = subStat.overAmount;
@@ -2511,25 +2497,11 @@ function MainApp() {
                               style={styles.budgetCardContent}
                             >
                               <View style={styles.budgetCardLeft}>
-                                <View style={[styles.budgetIconBox, { backgroundColor: subColors.bg, width: 42, height: 42, borderRadius: 13 }]}>
-                                  <RenderCategoryIcon
-                                    iconName={sub.icon}
-                                    size={16}
-                                    color={subColors.iconColor}
-                                    bgColor="transparent"
-                                  />
-                                </View>
-
-                                <View style={styles.budgetTitleRow}>
-                                  <Text style={[styles.budgetCardTitle, { fontSize: 15 }]}>{sub.name}</Text>
-                                  <Text style={styles.budgetCardSubtitle}>
-                                    {daysLeft}d left • {subStat.actualPercentSpent}% spent
-                                  </Text>
-                                </View>
+                                <Text style={[styles.budgetCardTitle, { fontSize: 15 }]}>{sub.name}</Text>
                               </View>
 
                               <View style={styles.budgetCardRight}>
-                                <Text style={[styles.budgetCardAmount, { fontSize: 17 }, isSubOver && { color: '#FF7070' }]}>
+                                <Text style={[styles.budgetCardAmount, { fontSize: 16 }, isSubOver && { color: '#FF7070' }]}>
                                   {isSubOver ? `+${data.currency}${subOverAmount.toLocaleString('en-IN')}` : `${data.currency}${subRemaining.toLocaleString('en-IN')}`}
                                 </Text>
                                 <Text style={isSubOver ? styles.budgetCardOverText : styles.budgetCardUnderText}>
