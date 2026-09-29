@@ -227,8 +227,8 @@ function MainApp() {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
-  const [expandedCat, setExpandedCat] = useState('needs');
-  const [expandedPillars, setExpandedPillars] = useState({ needs: true, wants: false, savings: false });
+  const [expandedCat, setExpandedCat] = useState(null);
+  const [expandedPillars, setExpandedPillars] = useState({ needs: false, wants: false, savings: false });
   const [selectedSubDetail, setSelectedSubDetail] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [isAddSubcategoryOpen, setIsAddSubcategoryOpen] = useState(false);
