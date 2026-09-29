@@ -277,6 +277,28 @@ function MainApp() {
   const homeScrollRef = useRef(null);
   const [data, setData] = useState(INITIAL_DATA);
   const [currentTab, setCurrentTab] = useState('home');
+  const tabFadeAnim = useRef(new Animated.Value(1)).current;
+
+  const switchTab = (nextTab) => {
+    if (nextTab === currentTab) return;
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    Animated.timing(tabFadeAnim, {
+      toValue: 0,
+      duration: 80,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentTab(nextTab);
+      Animated.timing(tabFadeAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
@@ -2516,7 +2538,7 @@ function MainApp() {
     >
       <View style={styles.darkDashboardArea}>
         <View style={styles.screenHeaderRow}>
-          <TouchableOpacity style={styles.screenBackBtn} onPress={() => setCurrentTab('home')}>
+          <TouchableOpacity style={styles.screenBackBtn} onPress={() => switchTab('home')}>
             <ArrowLeft size={18} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.screenHeaderTitle}>Analytics</Text>
@@ -2604,7 +2626,7 @@ function MainApp() {
     >
       <View style={styles.darkDashboardArea}>
         <View style={styles.screenHeaderRow}>
-          <TouchableOpacity style={styles.screenBackBtn} onPress={() => setCurrentTab('home')}>
+          <TouchableOpacity style={styles.screenBackBtn} onPress={() => switchTab('home')}>
             <ArrowLeft size={18} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.screenHeaderTitle}>Settings & Setup</Text>
@@ -2678,22 +2700,22 @@ function MainApp() {
         renderOnboarding()
       ) : (
         <>
-          {/* Main Content View */}
-          <View style={styles.mainContent}>
+          {/* Main Content View with Smooth Transition */}
+          <Animated.View style={[styles.mainContent, { opacity: tabFadeAnim }]}>
             {currentTab === 'home' && renderHome()}
             {currentTab === 'transactions' && renderTransactions()}
             {currentTab === 'budget' && renderBudget()}
             {currentTab === 'analytics' && renderAnalytics()}
             {currentTab === 'settings' && renderSettings()}
-          </View>
+          </Animated.View>
 
-          {/* FLOATING PILL BOTTOM NAVIGATION */}
+          {/* FLOATING PILL BOTTOM NAVIGATION (Wider, Budgets | Home | Settings) */}
           <View style={[styles.floatingBottomNavWrapper, { bottom: Math.max(18, insets.bottom + 10) }]}>
             <View style={styles.floatingNavPill}>
               {[
-                { id: 'home', icon: Home },
-                { id: 'budget', icon: Wallet },
-                { id: 'settings', icon: Settings },
+                { id: 'budget', icon: Wallet, label: 'Budgets' },
+                { id: 'home', icon: Home, label: 'Home' },
+                { id: 'settings', icon: Settings, label: 'Settings' },
               ].map((tab) => {
                 const IconComp = tab.icon;
                 const isSelected = currentTab === tab.id;
@@ -2701,8 +2723,9 @@ function MainApp() {
                   <TouchableOpacity
                     key={tab.id}
                     style={[styles.navPillItem, isSelected && styles.navPillItemActive]}
-                    onPress={() => setCurrentTab(tab.id)}
+                    onPress={() => switchTab(tab.id)}
                     activeOpacity={0.85}
+                    accessibilityLabel={tab.label}
                   >
                     <IconComp
                       size={24}
@@ -3712,31 +3735,34 @@ const styles = StyleSheet.create({
   // FLOATING PILL BOTTOM NAVIGATION
   floatingBottomNavWrapper: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 0,
+    right: 0,
     alignItems: 'center',
+    zIndex: 90,
   },
   floatingNavPill: {
     flexDirection: 'row',
-    backgroundColor: '#121212',
+    width: 290,
+    backgroundColor: '#141417',
     borderRadius: 999,
-    padding: 8,
-    gap: 10,
+    padding: 6,
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#262626',
+    borderColor: '#26262E',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.7,
+    shadowRadius: 20,
+    elevation: 16,
   },
   navPillItem: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 86,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1C1C1C',
+    backgroundColor: 'transparent',
   },
   navPillItemActive: {
     backgroundColor: '#FFFFFF',
