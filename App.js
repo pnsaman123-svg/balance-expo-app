@@ -376,7 +376,7 @@ function SplashRollingCarousel() {
   );
 }
 
-function BlinkingCaret({ height = 44, color = '#FFFFFF', width = 3 }) {
+function BlinkingCaret({ height = 54, color = '#FFFFFF', width = 3.5 }) {
   const blinkAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -464,12 +464,6 @@ function MainApp() {
   const handleHomeKeypadPress = (val) => {
     if (val === 'backspace') {
       setHomeAmountStr((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
-      return;
-    }
-    if (val === '.') {
-      if (!homeAmountStr.includes('.')) {
-        setHomeAmountStr((prev) => prev + '.');
-      }
       return;
     }
     setHomeAmountStr((prev) => {
@@ -1037,12 +1031,6 @@ function MainApp() {
       setSetupIncomeStr((prev) => (prev && prev.length > 0 ? prev.slice(0, -1) : ''));
       return;
     }
-    if (val === '.') {
-      if (!setupIncomeStr.includes('.')) {
-        setSetupIncomeStr((prev) => (prev ? prev + '.' : '0.'));
-      }
-      return;
-    }
     setSetupIncomeStr((prev) => {
       if (!prev || prev === '0') return val;
       if (prev.length >= 8) return prev;
@@ -1168,13 +1156,12 @@ function MainApp() {
 
           {/* Large Hero Calculator Display with Caret */}
           <View style={styles.calcHeroDisplay}>
-            <Text style={styles.calcHeroCurrency}>{data.currency}</Text>
             {setupIncomeStr ? (
               <Text style={styles.calcHeroAmount} numberOfLines={1}>
                 {parseFloat(setupIncomeStr).toLocaleString('en-IN')}
               </Text>
             ) : null}
-            <BlinkingCaret height={46} color="#FFFFFF" width={3} />
+            <BlinkingCaret height={54} color="#FFFFFF" width={3.5} />
           </View>
 
           {/* Filled Bottom Calculator Keypad (4 Rows) */}
@@ -1768,25 +1755,6 @@ function MainApp() {
   // ----------------------------------------------------
   // 1. DASHBOARD: SLIDE 1 (BIG NUMPAD & CENTERED REMAINING PILL) | SLIDE 2 (MONTHLY BUDGET & RECENT TX)
   // ----------------------------------------------------
-  const getAmountSplit = (rawStr, currencySym) => {
-    const s = rawStr || '0';
-    if (s.includes('.')) {
-      const parts = s.split('.');
-      const intNum = parseFloat(parts[0] || '0');
-      const decPart = parts[1] !== undefined ? `.${parts[1]}` : '.00';
-      return {
-        intStr: `${currencySym}${intNum.toLocaleString('en-IN')}`,
-        decStr: decPart,
-      };
-    } else {
-      const intNum = parseFloat(s || '0');
-      return {
-        intStr: `${currencySym}${intNum.toLocaleString('en-IN')}`,
-        decStr: '.00',
-      };
-    }
-  };
-
   const renderHome = () => {
     const currencyIsoCode =
       data.currency === '₹'
@@ -1798,7 +1766,6 @@ function MainApp() {
         : data.currency === '£'
         ? 'GBP'
         : 'USD';
-    const splitAmount = getAmountSplit(homeAmountStr, data.currency);
 
     return (
       <View style={{ flex: 1, backgroundColor: '#090909' }}>
@@ -1845,11 +1812,11 @@ function MainApp() {
               <View style={styles.homeAmountEndToEndRow}>
                 <Text style={styles.homeCurrencyIsoCode}>{currencyIsoCode}</Text>
 
-                <View style={styles.homeAmountSplitTextRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={styles.homeAmountBigInteger} numberOfLines={1}>
-                    {splitAmount.intStr}
+                    {data.currency}{parseFloat(homeAmountStr || '0').toLocaleString('en-IN')}
                   </Text>
-                  <Text style={styles.homeAmountSmallFraction}>{splitAmount.decStr}</Text>
+                  <BlinkingCaret height={46} color="#FFFFFF" width={3} />
                 </View>
               </View>
             </View>
