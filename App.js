@@ -265,9 +265,9 @@ function MainApp() {
 
   // Onboarding Setup State (clean zero state)
   const [onboardingStep, setOnboardingStep] = useState(1);
-  const [setupIncomeStr, setSetupIncomeStr] = useState('50000');
+  const [setupIncomeStr, setSetupIncomeStr] = useState('0');
   const [setupIncome, setSetupIncome] = useState([
-    { id: '1', name: 'Monthly Salary', amount: '50000' },
+    { id: '1', name: 'Monthly Salary', amount: '0' },
   ]);
   const [setupPercent, setSetupPercent] = useState({ needs: 50, wants: 30, savings: 20 });
   const [setupCategories, setSetupCategories] = useState({
@@ -910,7 +910,10 @@ function MainApp() {
               {/* Primary: Get Started (Black background, White text) */}
               <TouchableOpacity
                 style={styles.splashPrimaryBtn}
-                onPress={() => setOnboardingStep(2)}
+                onPress={() => {
+                  setSetupIncomeStr('0');
+                  setOnboardingStep(2);
+                }}
                 activeOpacity={0.88}
               >
                 <Text style={styles.splashPrimaryBtnText}>Get Started</Text>
