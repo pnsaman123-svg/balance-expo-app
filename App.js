@@ -1723,139 +1723,137 @@ function MainApp() {
         </View>
 
         {/* SLIDE 1: OVERVIEW (Monthly Budget & Recent Transactions) */}
-        <ScrollView
-          style={{ width: SCREEN_WIDTH }}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 110, gap: 14 }}
-          showsVerticalScrollIndicator={false}
+        <View
+          style={{
+            width: SCREEN_WIDTH,
+            paddingHorizontal: 20,
+            flex: 1,
+            justifyContent: 'space-between',
+            paddingBottom: Math.max(20, insets.bottom + 85),
+          }}
         >
-          {/* Monthly Budget Card */}
-          <View style={styles.charcoalBudgetCard}>
-            <View style={styles.cardHeaderRow}>
-              <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
-              <View style={styles.budgetPercentPill}>
-                <Text style={styles.budgetPercentText}>{calculations.percentSpent}% used</Text>
+          {/* Top Section: Monthly Budget Card */}
+          <View style={{ paddingTop: 10 }}>
+            <View style={styles.charcoalBudgetCard}>
+              <View style={styles.cardHeaderRow}>
+                <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
+                <View style={styles.budgetPercentPill}>
+                  <Text style={styles.budgetPercentText}>{calculations.percentSpent}% used</Text>
+                </View>
               </View>
-            </View>
 
-            <Text style={styles.budgetTotalLarge}>{formatCurr(calculations.totalIncome)}</Text>
+              <Text style={styles.budgetTotalLarge}>{formatCurr(calculations.totalIncome)}</Text>
 
-            <View style={styles.budgetMetaRow}>
-              <Text style={styles.budgetMetaText}>
-                Spent <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalSpent)}</Text>
-              </Text>
-              <Text style={styles.budgetMetaText}>
-                Remaining <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalBalance)}</Text>
-              </Text>
-            </View>
+              <View style={styles.budgetMetaRow}>
+                <Text style={styles.budgetMetaText}>
+                  Spent <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalSpent)}</Text>
+                </Text>
+                <Text style={styles.budgetMetaText}>
+                  Remaining <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalBalance)}</Text>
+                </Text>
+              </View>
 
-            {/* High-Contrast Progress Bar */}
-            <View style={styles.progressTrackDark}>
-              <View
-                style={[
-                  styles.progressFillLight,
-                  { width: `${Math.min(100, Math.max(5, calculations.percentSpent))}%` },
-                ]}
-              />
+              {/* High-Contrast Progress Bar */}
+              <View style={styles.progressTrackDark}>
+                <View
+                  style={[
+                    styles.progressFillLight,
+                    { width: `${Math.min(100, Math.max(5, calculations.percentSpent))}%` },
+                  ]}
+                />
+              </View>
             </View>
           </View>
 
-          {/* Over-Budget Warnings Alert Card */}
-          {calculations.overBudgetSubcategories.length > 0 && (
-            <View style={[styles.charcoalBudgetCard, styles.overBudgetAlertCard]}>
+          {/* Bottom Section: Carousel Dots in Same Spot + Recent Transactions Below Down */}
+          <View style={{ gap: 10 }}>
+            {/* Carousel Dots Indicator in exact same spot as Slide 0 */}
+            <View style={styles.homeCarouselDotsWrapper}>
+              <TouchableOpacity
+                onPress={() => {
+                  setHomeSlide(0);
+                  homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+                }}
+                style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  setHomeSlide(1);
+                  homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+                }}
+                style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
+              />
+            </View>
+
+            {/* Recent Transactions Charcoal Card (Matches Keypad Height) */}
+            <View style={[styles.charcoalBudgetCard, { height: 280, padding: 14 }]}>
               <View style={styles.cardHeaderRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <AlertTriangle size={15} color="#FFFFFF" strokeWidth={2.6} />
-                  <Text style={[styles.cardLabelCharcoal, { color: '#FFFFFF', fontWeight: 'bold' }]}>
-                    BUDGET EXCEEDED WARNINGS ({calculations.overBudgetSubcategories.length})
-                  </Text>
-                </View>
+                <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
                 <TouchableOpacity onPress={() => setCurrentTab('budget')}>
-                  <Text style={styles.charcoalCardLink}>View Budget</Text>
+                  <Text style={styles.charcoalCardLink}>View all ({calculations.transactions.length})</Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={{ gap: 8, marginTop: 10 }}>
-                {calculations.overBudgetSubcategories.map((sub) => (
-                  <TouchableOpacity
-                    key={sub.id}
-                    style={styles.overBudgetAlertRow}
-                    onPress={() => setSelectedSubDetail({ catId: sub.parentCatId, subId: sub.id })}
-                    activeOpacity={0.8}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-                        <RenderCategoryIcon iconName={sub.icon} size={14} color="#FFFFFF" bgColor="#222222" />
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#FFFFFF' }}>{sub.name}</Text>
-                          <Text style={{ fontSize: 11, color: '#8A8A8A' }}>
-                            Spent {formatCurr(sub.spent)} of {formatCurr(sub.budget)} ({sub.actualPercentSpent}%)
+              <ScrollView
+                style={{ marginTop: 8 }}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled={true}
+              >
+                {/* Over-Budget Warnings Alert Card if any */}
+                {calculations.overBudgetSubcategories.length > 0 && (
+                  <View style={{ marginBottom: 10, gap: 6 }}>
+                    {calculations.overBudgetSubcategories.map((sub) => (
+                      <TouchableOpacity
+                        key={sub.id}
+                        style={[styles.overBudgetAlertRow, { padding: 8 }]}
+                        onPress={() => setSelectedSubDetail({ catId: sub.parentCatId, subId: sub.id })}
+                        activeOpacity={0.8}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                            <RenderCategoryIcon iconName={sub.icon} size={12} color="#FFFFFF" bgColor="#222222" />
+                            <Text style={{ fontSize: 11.5, fontWeight: 'bold', color: '#FFFFFF' }} numberOfLines={1}>
+                              {sub.name} (Over Limit)
+                            </Text>
+                          </View>
+                          <View style={styles.overBadgePill}>
+                            <Text style={styles.overBadgePillText}>+{formatCurr(sub.overAmount)}</Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                <View style={{ gap: 8 }}>
+                  {calculations.transactions.length === 0 ? (
+                    <View style={styles.emptyDarkState}>
+                      <Text style={styles.emptyDarkText}>No transactions recorded for this month</Text>
+                    </View>
+                  ) : (
+                    calculations.transactions.slice(0, 10).map((tx) => (
+                      <TouchableOpacity
+                        key={tx.id}
+                        style={styles.darkTxCard}
+                        onPress={() => setEditingTransaction(tx)}
+                        activeOpacity={0.7}
+                      >
+                        <RenderCategoryIcon iconName={tx.icon} size={15} color="#FFFFFF" bgColor="#222222" />
+                        <View style={styles.darkTxDetails}>
+                          <Text style={styles.darkTxTitle} numberOfLines={1}>{tx.title}</Text>
+                          <Text style={styles.darkTxSub} numberOfLines={1}>
+                            {tx.categoryId === 'needs' ? 'Needs' : tx.categoryId === 'wants' ? 'Wants' : 'Savings'} → {tx.subcategoryName || 'General'} · {tx.date}
                           </Text>
                         </View>
-                      </View>
-                      <View style={styles.overBadgePill}>
-                        <Text style={styles.overBadgePillText}>+{formatCurr(sub.overAmount)} Over</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Recent Transactions Charcoal Card */}
-          <View style={styles.charcoalBudgetCard}>
-            <View style={styles.cardHeaderRow}>
-              <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
-              <TouchableOpacity onPress={() => setCurrentTab('budget')}>
-                <Text style={styles.charcoalCardLink}>View all ({calculations.transactions.length})</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={{ gap: 8, marginTop: 4 }}>
-              {calculations.transactions.length === 0 ? (
-                <View style={styles.emptyDarkState}>
-                  <Text style={styles.emptyDarkText}>No transactions recorded for this month</Text>
+                        <Text style={styles.darkTxAmount}>− {formatCurr(tx.amount)}</Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
                 </View>
-              ) : (
-                calculations.transactions.slice(0, 5).map((tx) => (
-                  <TouchableOpacity
-                    key={tx.id}
-                    style={styles.darkTxCard}
-                    onPress={() => setEditingTransaction(tx)}
-                    activeOpacity={0.7}
-                  >
-                    <RenderCategoryIcon iconName={tx.icon} size={15} color="#FFFFFF" bgColor="#222222" />
-                    <View style={styles.darkTxDetails}>
-                      <Text style={styles.darkTxTitle} numberOfLines={1}>{tx.title}</Text>
-                      <Text style={styles.darkTxSub} numberOfLines={1}>
-                        {tx.categoryId === 'needs' ? 'Needs' : tx.categoryId === 'wants' ? 'Wants' : 'Savings'} → {tx.subcategoryName || 'General'} · {tx.date}
-                      </Text>
-                    </View>
-                    <Text style={styles.darkTxAmount}>− {formatCurr(tx.amount)}</Text>
-                  </TouchableOpacity>
-                ))
-              )}
+              </ScrollView>
             </View>
           </View>
-
-          {/* Carousel Dots Indicator in Overview */}
-          <View style={[styles.homeCarouselDotsWrapper, { marginTop: 4 }]}>
-            <TouchableOpacity
-              onPress={() => {
-                setHomeSlide(0);
-                homeScrollRef.current?.scrollTo({ x: 0, animated: true });
-              }}
-              style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
-            />
-            <TouchableOpacity
-              onPress={() => {
-                setHomeSlide(1);
-                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-              }}
-              style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
-            />
-          </View>
-        </ScrollView>
+        </View>
       </ScrollView>
     </View>
   );
@@ -5090,18 +5088,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     marginVertical: 10,
-    gap: 6,
+    gap: 8,
   },
   homeAmountCurrency: {
     color: '#8A8A8A',
-    fontSize: 26,
+    fontSize: 34,
     fontWeight: '700',
   },
   homeAmountDigits: {
     color: '#FFFFFF',
-    fontSize: 44,
+    fontSize: 62,
     fontWeight: '900',
-    letterSpacing: -1,
+    letterSpacing: -1.5,
   },
   homeCatSelectorRow: {
     flexDirection: 'row',
