@@ -730,11 +730,20 @@ function MainApp() {
   };
 
   const handleAddSetupSubcategory = () => {
-    if (!newSetupSubName.trim() || !newSetupSubBudget) return;
+    if (!newSetupSubName.trim()) return;
+    const totalSetupInc = parseFloat(setupIncomeStr || '0') || 0;
+    const activePillarCap = Math.round((totalSetupInc * (setupPercent[activeSetupCat] || 0)) / 100);
+    const currentSubs = setupCategories[activeSetupCat] || [];
+    const currentSubTotal = currentSubs.reduce((sum, s) => sum + (parseFloat(s.budget) || 0), 0);
+    const remaining = Math.max(0, activePillarCap - currentSubTotal);
+
+    const enteredNum = parseFloat(newSetupSubBudget) || 0;
+    const finalBudget = Math.min(enteredNum, remaining);
+
     const newSub = {
       id: `sub-${Date.now()}`,
       name: newSetupSubName.trim(),
-      budget: newSetupSubBudget.trim(),
+      budget: String(finalBudget),
       icon: 'ShoppingBag',
     };
     setSetupCategories((prev) => ({
@@ -760,9 +769,25 @@ function MainApp() {
   };
 
   const handleUpdateSetupSubBudget = (catKey, subId, budget) => {
+    const totalSetupInc = parseFloat(setupIncomeStr || '0') || 0;
+    const activePillarCap = Math.round((totalSetupInc * (setupPercent[catKey] || 0)) / 100);
+    const currentSubs = setupCategories[catKey] || [];
+    const otherSubsSum = currentSubs
+      .filter((s) => s.id !== subId)
+      .reduce((sum, s) => sum + (parseFloat(s.budget) || 0), 0);
+    const maxAllowed = Math.max(0, activePillarCap - otherSubsSum);
+
+    let finalVal = budget;
+    if (budget !== '' && !isNaN(budget)) {
+      const num = parseFloat(budget) || 0;
+      if (num > maxAllowed) {
+        finalVal = String(maxAllowed);
+      }
+    }
+
     setSetupCategories((prev) => ({
       ...prev,
-      [catKey]: prev[catKey].map((s) => (s.id === subId ? { ...s, budget } : s)),
+      [catKey]: prev[catKey].map((s) => (s.id === subId ? { ...s, budget: finalVal } : s)),
     }));
   };
 
@@ -1197,7 +1222,7 @@ function MainApp() {
             </View>
 
             {/* Segmented Pillar Selector */}
-            <View style={[styles.catTabContainer, { marginBottom: 14 }]}>
+            <View style={[styles.catTabContainer, { marginBottom: 12 }]}>
               {[
                 { key: 'needs', label: 'Needs', amount: allocNeeds },
                 { key: 'wants', label: 'Wants', amount: allocWants },
@@ -1219,6 +1244,47 @@ function MainApp() {
                   </TouchableOpacity>
                 );
               })}
+            </View>
+
+            {/* Active Pillar Allocation Budget Limit & Status Card */}
+            <View style={styles.pillarAllocationSummaryCard}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <Text style={styles.pillarSummaryLabel}>
+                  {activeSetupCat.toUpperCase()} ALLOCATED
+                </Text>
+                <Text
+                  style={[
+                    styles.pillarSummaryRemaining,
+                    pillarDiff === 0 && { color: '#FFFFFF' },
+                    pillarDiff < 0 && { color: '#FF6B6B' },
+                  ]}
+                >
+                  {pillarDiff === 0
+                    ? '✓ 100% Allocated'
+                    : pillarDiff > 0
+                    ? `${formatCurr(pillarDiff)} available`
+                    : `Exceeds by ${formatCurr(Math.abs(pillarDiff))}`}
+                </Text>
+              </View>
+              <View style={styles.pillarProgressBarBg}>
+                <View
+                  style={[
+                    styles.pillarProgressBarFill,
+                    {
+                      width: `${Math.min(100, Math.max(0, (subTotal / (activePillarBudget || 1)) * 100))}%`,
+                      backgroundColor: pillarDiff < 0 ? '#FF6B6B' : '#FFFFFF',
+                    },
+                  ]}
+                />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+                <Text style={{ fontSize: 11, color: '#8A8A8A', fontWeight: '600' }}>
+                  {formatCurr(subTotal)} allocated
+                </Text>
+                <Text style={{ fontSize: 11, color: '#8A8A8A', fontWeight: '600' }}>
+                  Limit: {formatCurr(activePillarBudget)}
+                </Text>
+              </View>
             </View>
 
             <View style={{ gap: 8 }}>
@@ -1264,25 +1330,32 @@ function MainApp() {
             {!isAddingSetupSub ? (
               <View style={styles.centerAddCategoryWrapper}>
                 <TouchableOpacity
-                  style={styles.centerAddCategoryBtn}
+                  style={[
+                    styles.centerAddCategoryBtn,
+                    pillarDiff <= 0 && { opacity: 0.5 },
+                  ]}
                   onPress={() => {
+                    if (pillarDiff <= 0) return;
                     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
                       UIManager.setLayoutAnimationEnabledExperimental(true);
                     }
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setNewSetupSubBudget(String(pillarDiff));
                     setIsAddingSetupSub(true);
                   }}
                   activeOpacity={0.8}
                 >
                   <Plus size={16} color="#FFFFFF" strokeWidth={2.6} />
-                  <Text style={styles.centerAddCategoryBtnText}>Add</Text>
+                  <Text style={styles.centerAddCategoryBtnText}>
+                    {pillarDiff <= 0 ? 'Pillar Budget Full' : 'Add'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.addSubFormBox}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
-                    + New {activeSetupCat === 'needs' ? 'Need' : activeSetupCat === 'wants' ? 'Want' : 'Savings'}
+                    + New {activeSetupCat === 'needs' ? 'Need' : activeSetupCat === 'wants' ? 'Want' : 'Savings'} (Max {data.currency}{pillarDiff})
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
@@ -1312,8 +1385,15 @@ function MainApp() {
                     <Text style={{ color: '#8A8A8A', fontWeight: 'bold', fontSize: 12 }}>{data.currency}</Text>
                     <TextInput
                       value={newSetupSubBudget}
-                      onChangeText={setNewSetupSubBudget}
-                      placeholder="0"
+                      onChangeText={(val) => {
+                        const num = parseFloat(val) || 0;
+                        if (num > pillarDiff) {
+                          setNewSetupSubBudget(String(pillarDiff));
+                        } else {
+                          setNewSetupSubBudget(val);
+                        }
+                      }}
+                      placeholder={String(pillarDiff)}
                       placeholderTextColor="#666666"
                       keyboardType="numeric"
                       style={[styles.incomeSourceInputAmount, { width: 65 }]}
@@ -1328,8 +1408,8 @@ function MainApp() {
                       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                       setIsAddingSetupSub(false);
                     }}
-                    disabled={!newSetupSubName.trim()}
-                    style={[styles.actionPillWhite, { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, opacity: newSetupSubName.trim() ? 1 : 0.4 }]}
+                    disabled={!newSetupSubName.trim() || pillarDiff <= 0}
+                    style={[styles.actionPillWhite, { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, opacity: newSetupSubName.trim() && pillarDiff > 0 ? 1 : 0.4 }]}
                   >
                     <Plus size={14} color="#090909" strokeWidth={3} />
                     <Text style={[styles.actionPillWhiteText, { fontSize: 12.5 }]}>Add</Text>
@@ -1340,80 +1420,97 @@ function MainApp() {
           </ScrollView>
 
           {/* Step 4 Footer Navigation */}
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-            <TouchableOpacity style={styles.onboardingBackBtn} onPress={() => setOnboardingStep(3)}>
-              <ArrowLeft size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.onboardingPrimaryBtn, { flex: 1 }]}
-              onPress={() => {
-                const formattedSources = setupIncome
-                  .filter((s) => parseFloat(s.amount) > 0)
-                  .map((s) => ({
-                    id: s.id || `inc-${Date.now()}`,
-                    name: s.name.trim() || 'Salary',
-                    amount: parseFloat(s.amount) || 0,
-                  }));
+          {(() => {
+            const hasAnyOverBudget = ['needs', 'wants', 'savings'].some((catKey) => {
+              const cap = catKey === 'needs' ? allocNeeds : catKey === 'wants' ? allocWants : allocSavings;
+              const total = (setupCategories[catKey] || []).reduce((sum, s) => sum + (parseFloat(s.budget) || 0), 0);
+              return total > cap;
+            });
 
-                const newCategories = [
-                  {
-                    id: 'needs',
-                    name: 'Needs',
-                    targetPercent: setupPercent.needs,
-                    budget: allocNeeds,
-                    subcategories: (setupCategories.needs || []).map((s) => ({
-                      id: s.id || `sub-${Date.now()}-${Math.random()}`,
-                      name: s.name.trim() || 'Need',
-                      budget: parseFloat(s.budget) || 0,
-                      icon: s.icon || 'House',
-                    })),
-                  },
-                  {
-                    id: 'wants',
-                    name: 'Wants',
-                    targetPercent: setupPercent.wants,
-                    budget: allocWants,
-                    subcategories: (setupCategories.wants || []).map((s) => ({
-                      id: s.id || `sub-${Date.now()}-${Math.random()}`,
-                      name: s.name.trim() || 'Want',
-                      budget: parseFloat(s.budget) || 0,
-                      icon: s.icon || 'ShoppingBag',
-                    })),
-                  },
-                  {
-                    id: 'savings',
-                    name: 'Savings',
-                    targetPercent: setupPercent.savings,
-                    budget: allocSavings,
-                    subcategories: (setupCategories.savings || []).map((s) => ({
-                      id: s.id || `sub-${Date.now()}-${Math.random()}`,
-                      name: s.name.trim() || 'Savings',
-                      budget: parseFloat(s.budget) || 0,
-                      icon: s.icon || 'ShieldCheck',
-                    })),
-                  },
-                ];
+            return (
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                <TouchableOpacity style={styles.onboardingBackBtn} onPress={() => setOnboardingStep(3)}>
+                  <ArrowLeft size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.onboardingPrimaryBtn,
+                    { flex: 1 },
+                    hasAnyOverBudget && { opacity: 0.4, backgroundColor: '#181818' },
+                  ]}
+                  disabled={hasAnyOverBudget}
+                  onPress={() => {
+                    const formattedSources = setupIncome
+                      .filter((s) => parseFloat(s.amount) > 0)
+                      .map((s) => ({
+                        id: s.id || `inc-${Date.now()}`,
+                        name: s.name.trim() || 'Salary',
+                        amount: parseFloat(s.amount) || 0,
+                      }));
 
-                saveData({
-                  ...data,
-                  isOnboarded: true,
-                  months: {
-                    ...data.months,
-                    [data.selectedMonthId]: {
-                      ...currentMonthData,
-                      incomeSources: formattedSources,
-                      categories: newCategories,
-                      transactions: [],
-                    },
-                  },
-                });
-                setCurrentTab('home');
-              }}
-            >
-              <Text style={styles.onboardingPrimaryBtnText}>Let's Go</Text>
-              <ArrowRight size={18} color="#090909" strokeWidth={2.8} />
-            </TouchableOpacity>
-          </View>
+                    const newCategories = [
+                      {
+                        id: 'needs',
+                        name: 'Needs',
+                        targetPercent: setupPercent.needs,
+                        budget: allocNeeds,
+                        subcategories: (setupCategories.needs || []).map((s) => ({
+                          id: s.id || `sub-${Date.now()}-${Math.random()}`,
+                          name: s.name.trim() || 'Need',
+                          budget: parseFloat(s.budget) || 0,
+                          icon: s.icon || 'House',
+                        })),
+                      },
+                      {
+                        id: 'wants',
+                        name: 'Wants',
+                        targetPercent: setupPercent.wants,
+                        budget: allocWants,
+                        subcategories: (setupCategories.wants || []).map((s) => ({
+                          id: s.id || `sub-${Date.now()}-${Math.random()}`,
+                          name: s.name.trim() || 'Want',
+                          budget: parseFloat(s.budget) || 0,
+                          icon: s.icon || 'ShoppingBag',
+                        })),
+                      },
+                      {
+                        id: 'savings',
+                        name: 'Savings',
+                        targetPercent: setupPercent.savings,
+                        budget: allocSavings,
+                        subcategories: (setupCategories.savings || []).map((s) => ({
+                          id: s.id || `sub-${Date.now()}-${Math.random()}`,
+                          name: s.name.trim() || 'Savings',
+                          budget: parseFloat(s.budget) || 0,
+                          icon: s.icon || 'ShieldCheck',
+                        })),
+                      },
+                    ];
+
+                    saveData({
+                      ...data,
+                      isOnboarded: true,
+                      months: {
+                        ...data.months,
+                        [data.selectedMonthId]: {
+                          ...currentMonthData,
+                          incomeSources: formattedSources,
+                          categories: newCategories,
+                          transactions: [],
+                        },
+                      },
+                    });
+                    setCurrentTab('home');
+                  }}
+                >
+                  <Text style={[styles.onboardingPrimaryBtnText, hasAnyOverBudget && { color: '#888888' }]}>
+                    Let's Go
+                  </Text>
+                  <ArrowRight size={18} color={hasAnyOverBudget ? '#888888' : '#090909'} strokeWidth={2.8} />
+                </TouchableOpacity>
+              </View>
+            );
+          })()}
         </View>
       );
     }
@@ -4756,5 +4853,35 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
     zIndex: 99,
+  },
+  pillarAllocationSummaryCard: {
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#242424',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+  },
+  pillarSummaryLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#8A8A8A',
+    letterSpacing: 1,
+  },
+  pillarSummaryRemaining: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#D6D6D6',
+  },
+  pillarProgressBarBg: {
+    height: 7,
+    backgroundColor: '#222222',
+    borderRadius: 3.5,
+    overflow: 'hidden',
+    marginVertical: 6,
+  },
+  pillarProgressBarFill: {
+    height: '100%',
+    borderRadius: 3.5,
   },
 });
