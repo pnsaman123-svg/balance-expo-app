@@ -14,6 +14,7 @@ import {
   LayoutAnimation,
   UIManager,
   Animated,
+  Easing,
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -277,6 +278,147 @@ const triggerLayoutAnimation = () => {
   } catch (e) {}
 };
 
+const SPLASH_WORDS = ['Spend', 'Plan', 'Save'];
+const SPLASH_SLOT_HEIGHT = 56;
+
+function SplashRollingCarousel() {
+  const [centerIdx, setCenterIdx] = useState(0); // 0: Spend, 1: Plan, 2: Save
+  const rollAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let isMounted = true;
+    const interval = setInterval(() => {
+      Animated.timing(rollAnim, {
+        toValue: 1,
+        duration: 550,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished && isMounted) {
+          rollAnim.setValue(0);
+          setCenterIdx((prev) => (prev + 1) % SPLASH_WORDS.length);
+        }
+      });
+    }, 2000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Words for the 4 slots:
+  // Next word to be centered is (centerIdx + 1) % 3
+  // Pos 1 (Top slot): incoming to center on roll -> SPLASH_WORDS[(centerIdx + 1) % 3]
+  // Pos 2 (Center slot): current active -> SPLASH_WORDS[centerIdx]
+  // Pos 3 (Bottom slot): moving down/out -> SPLASH_WORDS[(centerIdx - 1 + 3) % 3]
+  // Pos 0 (Above top): incoming from top -> SPLASH_WORDS[(centerIdx + 2) % 3]
+  const wIncoming = SPLASH_WORDS[(centerIdx + 2) % 3];
+  const wTop = SPLASH_WORDS[(centerIdx + 1) % 3];
+  const wCenter = SPLASH_WORDS[centerIdx];
+  const wBottom = SPLASH_WORDS[(centerIdx - 1 + 3) % 3];
+
+  const trackTranslateY = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-SPLASH_SLOT_HEIGHT, 0],
+  });
+
+  // Pos 0: above -> top
+  const pos0Opacity = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.35],
+  });
+  const pos0Scale = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 0.90],
+  });
+
+  // Pos 1: top -> center (gains highlight)
+  const pos1Opacity = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.35, 1.0],
+  });
+  const pos1Scale = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.90, 1.15],
+  });
+  const pos1Bold = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  // Pos 2: center -> bottom (loses highlight)
+  const pos2Opacity = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1.0, 0.35],
+  });
+  const pos2Scale = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1.15, 0.90],
+  });
+  const pos2Bold = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+
+  // Pos 3: bottom -> out below
+  const pos3Opacity = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.35, 0],
+  });
+  const pos3Scale = rollAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.90, 0.85],
+  });
+
+  return (
+    <View style={styles.splashCarouselViewport}>
+      <Animated.View
+        style={[
+          styles.splashCarouselTrack,
+          {
+            transform: [{ translateY: trackTranslateY }],
+          },
+        ]}
+      >
+        {/* Pos 0: Incoming above top */}
+        <Animated.View style={[styles.splashSlotRow, { opacity: pos0Opacity, transform: [{ scale: pos0Scale }] }]}>
+          <Text style={styles.splashMutedText}>{wIncoming}</Text>
+        </Animated.View>
+
+        {/* Pos 1: Top slot -> Center slot (rolling down & becoming bold black) */}
+        <Animated.View style={[styles.splashSlotRow, { opacity: pos1Opacity, transform: [{ scale: pos1Scale }] }]}>
+          <View style={styles.splashTextStack}>
+            <Animated.View style={{ opacity: pos1Bold.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
+              <Text style={styles.splashMutedText}>{wTop}</Text>
+            </Animated.View>
+            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: pos1Bold }]}>
+              <Text style={styles.splashBoldText}>{wTop}</Text>
+            </Animated.View>
+          </View>
+        </Animated.View>
+
+        {/* Pos 2: Center slot -> Bottom slot (rolling down & becoming muted) */}
+        <Animated.View style={[styles.splashSlotRow, { opacity: pos2Opacity, transform: [{ scale: pos2Scale }] }]}>
+          <View style={styles.splashTextStack}>
+            <Animated.View style={{ opacity: pos2Bold.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
+              <Text style={styles.splashMutedText}>{wCenter}</Text>
+            </Animated.View>
+            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: pos2Bold }]}>
+              <Text style={styles.splashBoldText}>{wCenter}</Text>
+            </Animated.View>
+          </View>
+        </Animated.View>
+
+        {/* Pos 3: Bottom slot -> Exiting below */}
+        <Animated.View style={[styles.splashSlotRow, { opacity: pos3Opacity, transform: [{ scale: pos3Scale }] }]}>
+          <Text style={styles.splashMutedText}>{wBottom}</Text>
+        </Animated.View>
+      </Animated.View>
+    </View>
+  );
+}
+
 function MainApp() {
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -410,13 +552,6 @@ function MainApp() {
   const [animContent] = useState(new Animated.Value(0));
   const [animButtons] = useState(new Animated.Value(0));
 
-  // Splash Screen Word Cycling (Spend -> Plan -> Save loop)
-  const [cycleIndex, setCycleIndex] = useState(0); // 0: Spend, 1: Plan, 2: Save
-  const animWord0 = useRef(new Animated.Value(1)).current; // Spend starts highlighted
-  const animWord1 = useRef(new Animated.Value(0)).current; // Plan
-  const animWord2 = useRef(new Animated.Value(0)).current; // Save
-  const animWordValues = [animWord0, animWord1, animWord2];
-
   useEffect(() => {
     if (onboardingStep === 1) {
       animWords.setValue(0);
@@ -449,31 +584,6 @@ function MainApp() {
         }),
       ]).start();
     }
-  }, [onboardingStep]);
-
-  // Infinite Word Highlight Cycle Loop (Spend -> Plan -> Save -> Spend...)
-  useEffect(() => {
-    if (onboardingStep !== 1) return;
-    const cycleInterval = setInterval(() => {
-      setCycleIndex((curr) => {
-        const next = (curr + 1) % 3;
-        Animated.parallel([
-          Animated.timing(animWordValues[curr], {
-            toValue: 0,
-            duration: 450,
-            useNativeDriver: true,
-          }),
-          Animated.timing(animWordValues[next], {
-            toValue: 1,
-            duration: 450,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        return next;
-      });
-    }, 1800);
-
-    return () => clearInterval(cycleInterval);
   }, [onboardingStep]);
 
   // Load persistence
@@ -964,7 +1074,7 @@ function MainApp() {
             style={[
               styles.splashTypographyContainer,
               {
-                paddingTop: insets.top + 48,
+                paddingTop: insets.top + 36,
                 opacity: animWords,
                 transform: [
                   {
@@ -977,40 +1087,7 @@ function MainApp() {
               },
             ]}
           >
-            {['Spend', 'Plan', 'Save'].map((word, idx) => {
-              const animVal = animWordValues[idx];
-              const scale = animVal.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.88, 1.15],
-              });
-              const opacity = animVal.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.35, 1.0],
-              });
-              const isHighlighted = cycleIndex === idx;
-
-              return (
-                <Animated.View
-                  key={word}
-                  style={[
-                    styles.splashCycleWordRow,
-                    {
-                      transform: [{ scale }],
-                      opacity,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.splashCycleWordBase,
-                      isHighlighted ? styles.splashCycleWordActive : styles.splashCycleWordInactive,
-                    ]}
-                  >
-                    {word}
-                  </Text>
-                </Animated.View>
-              );
-            })}
+            <SplashRollingCarousel />
           </Animated.View>
 
           {/* Soft Organic Monochrome Gradient Rising from the Bottom */}
@@ -4455,22 +4532,37 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     zIndex: 2,
   },
-  splashCycleWordRow: {
-    marginVertical: 3,
+  splashCarouselViewport: {
+    height: 168, // 56 * 3 slots
+    overflow: 'hidden',
+    width: '100%',
+    justifyContent: 'flex-start',
   },
-  splashCycleWordBase: {
-    letterSpacing: -0.5,
-    lineHeight: 52,
+  splashCarouselTrack: {
+    width: '100%',
   },
-  splashCycleWordActive: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: '#000000',
+  splashSlotRow: {
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
-  splashCycleWordInactive: {
+  splashTextStack: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  splashMutedText: {
     fontSize: 34,
     fontWeight: '400',
     color: '#9E9E9E',
+    letterSpacing: -0.5,
+    lineHeight: 46,
+  },
+  splashBoldText: {
+    fontSize: 46,
+    fontWeight: '800',
+    color: '#000000',
+    letterSpacing: -0.5,
+    lineHeight: 50,
   },
   splashGradientWrapper: {
     position: 'absolute',
