@@ -410,6 +410,13 @@ function MainApp() {
   const [animContent] = useState(new Animated.Value(0));
   const [animButtons] = useState(new Animated.Value(0));
 
+  // Splash Screen Word Cycling (Spend -> Plan -> Save loop)
+  const [cycleIndex, setCycleIndex] = useState(0); // 0: Spend, 1: Plan, 2: Save
+  const animWord0 = useRef(new Animated.Value(1)).current; // Spend starts highlighted
+  const animWord1 = useRef(new Animated.Value(0)).current; // Plan
+  const animWord2 = useRef(new Animated.Value(0)).current; // Save
+  const animWordValues = [animWord0, animWord1, animWord2];
+
   useEffect(() => {
     if (onboardingStep === 1) {
       animWords.setValue(0);
@@ -442,6 +449,31 @@ function MainApp() {
         }),
       ]).start();
     }
+  }, [onboardingStep]);
+
+  // Infinite Word Highlight Cycle Loop (Spend -> Plan -> Save -> Spend...)
+  useEffect(() => {
+    if (onboardingStep !== 1) return;
+    const cycleInterval = setInterval(() => {
+      setCycleIndex((curr) => {
+        const next = (curr + 1) % 3;
+        Animated.parallel([
+          Animated.timing(animWordValues[curr], {
+            toValue: 0,
+            duration: 450,
+            useNativeDriver: true,
+          }),
+          Animated.timing(animWordValues[next], {
+            toValue: 1,
+            duration: 450,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        return next;
+      });
+    }, 1800);
+
+    return () => clearInterval(cycleInterval);
   }, [onboardingStep]);
 
   // Load persistence
@@ -945,9 +977,40 @@ function MainApp() {
               },
             ]}
           >
-            <Text style={styles.splashMutedWord}>Plan</Text>
-            <Text style={styles.splashBoldWord}>SPEND</Text>
-            <Text style={styles.splashMutedWord}>Save</Text>
+            {['Spend', 'Plan', 'Save'].map((word, idx) => {
+              const animVal = animWordValues[idx];
+              const scale = animVal.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.88, 1.15],
+              });
+              const opacity = animVal.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.35, 1.0],
+              });
+              const isHighlighted = cycleIndex === idx;
+
+              return (
+                <Animated.View
+                  key={word}
+                  style={[
+                    styles.splashCycleWordRow,
+                    {
+                      transform: [{ scale }],
+                      opacity,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.splashCycleWordBase,
+                      isHighlighted ? styles.splashCycleWordActive : styles.splashCycleWordInactive,
+                    ]}
+                  >
+                    {word}
+                  </Text>
+                </Animated.View>
+              );
+            })}
           </Animated.View>
 
           {/* Soft Organic Monochrome Gradient Rising from the Bottom */}
@@ -966,8 +1029,8 @@ function MainApp() {
             </Svg>
           </Animated.View>
 
-          {/* Content Positioned Over the Lower Gradient Area */}
-          <View style={[styles.splashLowerContent, { paddingBottom: Math.max(24, insets.bottom + 16) }]}>
+          {/* Content Positioned Over the Lower Gradient Area (No badge above headline) */}
+          <View style={[styles.splashLowerContent, { paddingBottom: Math.max(28, insets.bottom + 20) }]}>
             <Animated.View
               style={{
                 opacity: animContent,
@@ -981,11 +1044,6 @@ function MainApp() {
                 ],
               }}
             >
-              {/* Small Monochrome Icon Badge */}
-              <View style={styles.splashIconBadge}>
-                <Sparkles size={16} color="#FFFFFF" strokeWidth={2.4} />
-              </View>
-
               {/* Large Short Headline */}
               <Text style={styles.splashHeadline}>Your wealth,{"\n"}in perfect balance.</Text>
 
@@ -995,7 +1053,7 @@ function MainApp() {
               </Text>
             </Animated.View>
 
-            {/* Two Large Rounded CTA Buttons */}
+            {/* Clean Single Primary CTA Button */}
             <Animated.View
               style={[
                 styles.splashButtonsContainer,
@@ -1022,21 +1080,6 @@ function MainApp() {
                 activeOpacity={0.88}
               >
                 <Text style={styles.splashPrimaryBtnText}>Get Started</Text>
-              </TouchableOpacity>
-
-              {/* Secondary: Restore / Default demo profile */}
-              <TouchableOpacity
-                style={styles.splashSecondaryBtn}
-                onPress={() => {
-                  saveData({
-                    ...INITIAL_DATA,
-                    isOnboarded: true,
-                  });
-                  setCurrentTab('home');
-                }}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.splashSecondaryBtnText}>Restore Default Profile</Text>
               </TouchableOpacity>
             </Animated.View>
           </View>
@@ -4412,20 +4455,22 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     zIndex: 2,
   },
-  splashMutedWord: {
+  splashCycleWordRow: {
+    marginVertical: 3,
+  },
+  splashCycleWordBase: {
+    letterSpacing: -0.5,
+    lineHeight: 52,
+  },
+  splashCycleWordActive: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: '#000000',
+  },
+  splashCycleWordInactive: {
     fontSize: 34,
     fontWeight: '400',
     color: '#9E9E9E',
-    letterSpacing: 0.5,
-    lineHeight: 46,
-  },
-  splashBoldWord: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#000000',
-    letterSpacing: 1.5,
-    lineHeight: 58,
-    marginVertical: 2,
   },
   splashGradientWrapper: {
     position: 'absolute',
@@ -4439,20 +4484,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     zIndex: 3,
   },
-  splashIconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
   splashHeadline: {
     fontSize: 34,
-    fontWeight: '900',
+    fontWeight: '800',
     color: '#FFFFFF',
     lineHeight: 40,
     letterSpacing: -0.5,
@@ -4466,7 +4500,6 @@ const styles = StyleSheet.create({
   },
   splashButtonsContainer: {
     marginTop: 26,
-    gap: 10,
   },
   splashPrimaryBtn: {
     height: 56,
@@ -4485,19 +4518,6 @@ const styles = StyleSheet.create({
   splashPrimaryBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: 'bold',
-    letterSpacing: 0.2,
-  },
-  splashSecondaryBtn: {
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#F0F0F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  splashSecondaryBtnText: {
-    color: '#090909',
-    fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 0.2,
   },
