@@ -1814,8 +1814,8 @@ function MainApp() {
               </View>
             </View>
 
-            {/* Bottom Section: Recent Transactions Card */}
-            <View style={[styles.charcoalBudgetCard, { height: 320, backgroundColor: '#151518', borderColor: '#222228', padding: 14, marginBottom: 0 }]}>
+            {/* Bottom Section: Recent Transactions Card (Matching 366px height to Keypad Card) */}
+            <View style={[styles.charcoalBudgetCard, { height: 366, backgroundColor: '#151518', borderColor: '#222228', padding: 14, marginBottom: 0 }]}>
               <View style={styles.cardHeaderRow}>
                 <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
                 <TouchableOpacity onPress={() => setCurrentTab('budget')}>
@@ -1884,18 +1884,18 @@ function MainApp() {
           </View>
         </ScrollView>
 
-        {/* 100% FIXED CAROUSEL DOTS */}
+        {/* 100% FIXED CAROUSEL DOTS - Positioned precisely above Total Balance Pill & Same in Second Slide */}
         <View
           pointerEvents="box-none"
           style={{
             position: 'absolute',
-            bottom: Math.max(16, insets.bottom + 85) + 328,
+            bottom: Math.max(16, insets.bottom + 85) + 394,
             left: 0,
             right: 0,
             height: 20,
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10,
+            zIndex: 30,
           }}
         >
           <View style={styles.homeCarouselDotsWrapper}>
