@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -220,6 +220,8 @@ function OnboardingRatioSliderTrack({ label, percent, amount, color, onPercentCh
 
 function MainApp() {
   const insets = useSafeAreaInsets();
+  const { width: SCREEN_WIDTH } = Dimensions.get('window');
+  const homeScrollRef = useRef(null);
   const [data, setData] = useState(INITIAL_DATA);
   const [currentTab, setCurrentTab] = useState('home');
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
@@ -1585,51 +1587,72 @@ function MainApp() {
   // 1. DASHBOARD: SLIDE 1 (BIG NUMPAD & CENTERED REMAINING PILL) | SLIDE 2 (MONTHLY BUDGET & RECENT TX)
   // ----------------------------------------------------
   const renderHome = () => (
-    <ScrollView
-      style={styles.scrollContainer}
-      contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Dark Upper Dashboard Section */}
-      <View style={styles.darkDashboardArea}>
-        {/* Top Header Row: Month Selector | Slide Toggle | Avatar (No 'Good Morning') */}
-        <View style={styles.dashboardTopRow}>
+    <View style={{ flex: 1, backgroundColor: '#090909' }}>
+      {/* Top Header Row: Month Selector | Slide Toggle | Avatar (Fixed Header) */}
+      <View style={[styles.dashboardTopRow, { marginHorizontal: 20, marginTop: 4, marginBottom: 8 }]}>
+        <TouchableOpacity
+          style={styles.monthSelectPill}
+          onPress={() => setIsMonthPickerOpen(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.monthSelectText}>{currentMonthData.monthName}</Text>
+          <ChevronDown size={14} color="#D6D6D6" style={{ marginLeft: 4 }} />
+        </TouchableOpacity>
+
+        {/* Centered Segmented Slide Switcher */}
+        <View style={styles.homeSlideSegmentPill}>
           <TouchableOpacity
-            style={styles.monthSelectPill}
-            onPress={() => setIsMonthPickerOpen(true)}
-            activeOpacity={0.8}
+            onPress={() => {
+              setHomeSlide(0);
+              homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+            }}
+            style={[styles.homeSlideTabBtn, homeSlide === 0 && styles.homeSlideTabBtnActive]}
           >
-            <Text style={styles.monthSelectText}>{currentMonthData.monthName}</Text>
-            <ChevronDown size={14} color="#D6D6D6" style={{ marginLeft: 4 }} />
+            <Text style={[styles.homeSlideTabText, homeSlide === 0 && styles.homeSlideTabTextActive]}>
+              Keypad
+            </Text>
           </TouchableOpacity>
-
-          {/* Centered Segmented Slide Switcher */}
-          <View style={styles.homeSlideSegmentPill}>
-            <TouchableOpacity
-              onPress={() => setHomeSlide(0)}
-              style={[styles.homeSlideTabBtn, homeSlide === 0 && styles.homeSlideTabBtnActive]}
-            >
-              <Text style={[styles.homeSlideTabText, homeSlide === 0 && styles.homeSlideTabTextActive]}>
-                Keypad
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setHomeSlide(1)}
-              style={[styles.homeSlideTabBtn, homeSlide === 1 && styles.homeSlideTabBtnActive]}
-            >
-              <Text style={[styles.homeSlideTabText, homeSlide === 1 && styles.homeSlideTabTextActive]}>
-                Overview
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.dashboardAvatar}>
-            <Text style={styles.dashboardAvatarText}>{(data?.userName || 'U').charAt(0).toUpperCase()}</Text>
-          </View>
+          <TouchableOpacity
+            onPress={() => {
+              setHomeSlide(1);
+              homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+            }}
+            style={[styles.homeSlideTabBtn, homeSlide === 1 && styles.homeSlideTabBtnActive]}
+          >
+            <Text style={[styles.homeSlideTabText, homeSlide === 1 && styles.homeSlideTabTextActive]}>
+              Overview
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {homeSlide === 0 ? (
-          /* SLIDE 1: CENTERED REMAINING BALANCE PILL + BIG NUM PAD EXPENSE ENTRY */
+        <View style={styles.dashboardAvatar}>
+          <Text style={styles.dashboardAvatarText}>{(data?.userName || 'U').charAt(0).toUpperCase()}</Text>
+        </View>
+      </View>
+
+      {/* Horizontal Swipeable Container */}
+      <ScrollView
+        ref={homeScrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => {
+          const page = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+          setHomeSlide(page);
+        }}
+        style={{ flex: 1 }}
+      >
+        {/* SLIDE 0: KEYPAD EXPENSE ENTRY (Keypad anchored at bottom above nav bar) */}
+        <View
+          style={{
+            width: SCREEN_WIDTH,
+            paddingHorizontal: 20,
+            flex: 1,
+            justifyContent: 'space-between',
+            paddingBottom: Math.max(20, insets.bottom + 85),
+          }}
+        >
+          {/* Top Section */}
           <View style={{ paddingTop: 4 }}>
             {/* Remaining Balance Pill in Center */}
             <View style={styles.centerBalancePillWrapper}>
@@ -1667,9 +1690,11 @@ function MainApp() {
                 );
               })}
             </View>
+          </View>
 
-            {/* Big Number Pad (Keypad) */}
-            <View style={[styles.calcKeypadWrapperFilled, { marginTop: 10 }]}>
+          {/* Bottom Section: Big Number Pad + Carousel Swipe Dots */}
+          <View style={{ gap: 10 }}>
+            <View style={styles.calcKeypadWrapperFilled}>
               {/* Row 1 */}
               <View style={styles.calcKeypadRow}>
                 {['1', '2', '3'].map((k) => (
@@ -1747,123 +1772,163 @@ function MainApp() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Carousel Dots Indicator below Keypad */}
+            <View style={styles.homeCarouselDotsWrapper}>
+              <TouchableOpacity
+                onPress={() => {
+                  setHomeSlide(0);
+                  homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+                }}
+                style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  setHomeSlide(1);
+                  homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+                }}
+                style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
+              />
+            </View>
           </View>
-        ) : (
-          /* SLIDE 2: MONTHLY BUDGET & RECENT TRANSACTIONS */
-          <View style={{ gap: 14 }}>
-            {/* Monthly Budget Card */}
-            <View style={styles.charcoalBudgetCard}>
-              <View style={styles.cardHeaderRow}>
-                <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
-                <View style={styles.budgetPercentPill}>
-                  <Text style={styles.budgetPercentText}>{calculations.percentSpent}% used</Text>
-                </View>
-              </View>
+        </View>
 
-              <Text style={styles.budgetTotalLarge}>{formatCurr(calculations.totalIncome)}</Text>
-
-              <View style={styles.budgetMetaRow}>
-                <Text style={styles.budgetMetaText}>
-                  Spent <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalSpent)}</Text>
-                </Text>
-                <Text style={styles.budgetMetaText}>
-                  Remaining <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalBalance)}</Text>
-                </Text>
-              </View>
-
-              {/* High-Contrast Progress Bar */}
-              <View style={styles.progressTrackDark}>
-                <View
-                  style={[
-                    styles.progressFillLight,
-                    { width: `${Math.min(100, Math.max(5, calculations.percentSpent))}%` },
-                  ]}
-                />
+        {/* SLIDE 1: OVERVIEW (Monthly Budget & Recent Transactions) */}
+        <ScrollView
+          style={{ width: SCREEN_WIDTH }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 110, gap: 14 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Monthly Budget Card */}
+          <View style={styles.charcoalBudgetCard}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
+              <View style={styles.budgetPercentPill}>
+                <Text style={styles.budgetPercentText}>{calculations.percentSpent}% used</Text>
               </View>
             </View>
 
-            {/* Over-Budget Warnings Alert Card */}
-            {calculations.overBudgetSubcategories.length > 0 && (
-              <View style={[styles.charcoalBudgetCard, styles.overBudgetAlertCard]}>
-                <View style={styles.cardHeaderRow}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <AlertTriangle size={15} color="#FFFFFF" strokeWidth={2.6} />
-                    <Text style={[styles.cardLabelCharcoal, { color: '#FFFFFF', fontWeight: 'bold' }]}>
-                      BUDGET EXCEEDED WARNINGS ({calculations.overBudgetSubcategories.length})
-                    </Text>
-                  </View>
-                  <TouchableOpacity onPress={() => setCurrentTab('budget')}>
-                    <Text style={styles.charcoalCardLink}>View Budget</Text>
-                  </TouchableOpacity>
-                </View>
+            <Text style={styles.budgetTotalLarge}>{formatCurr(calculations.totalIncome)}</Text>
 
-                <View style={{ gap: 8, marginTop: 10 }}>
-                  {calculations.overBudgetSubcategories.map((sub) => (
-                    <TouchableOpacity
-                      key={sub.id}
-                      style={styles.overBudgetAlertRow}
-                      onPress={() => setSelectedSubDetail({ catId: sub.parentCatId, subId: sub.id })}
-                      activeOpacity={0.8}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-                          <RenderCategoryIcon iconName={sub.icon} size={14} color="#FFFFFF" bgColor="#222222" />
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#FFFFFF' }}>{sub.name}</Text>
-                            <Text style={{ fontSize: 11, color: '#8A8A8A' }}>
-                              Spent {formatCurr(sub.spent)} of {formatCurr(sub.budget)} ({sub.actualPercentSpent}%)
-                            </Text>
-                          </View>
-                        </View>
-                        <View style={styles.overBadgePill}>
-                          <Text style={styles.overBadgePillText}>+{formatCurr(sub.overAmount)} Over</Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
+            <View style={styles.budgetMetaRow}>
+              <Text style={styles.budgetMetaText}>
+                Spent <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalSpent)}</Text>
+              </Text>
+              <Text style={styles.budgetMetaText}>
+                Remaining <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalBalance)}</Text>
+              </Text>
+            </View>
 
-            {/* Recent Transactions Charcoal Card */}
-            <View style={styles.charcoalBudgetCard}>
+            {/* High-Contrast Progress Bar */}
+            <View style={styles.progressTrackDark}>
+              <View
+                style={[
+                  styles.progressFillLight,
+                  { width: `${Math.min(100, Math.max(5, calculations.percentSpent))}%` },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Over-Budget Warnings Alert Card */}
+          {calculations.overBudgetSubcategories.length > 0 && (
+            <View style={[styles.charcoalBudgetCard, styles.overBudgetAlertCard]}>
               <View style={styles.cardHeaderRow}>
-                <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <AlertTriangle size={15} color="#FFFFFF" strokeWidth={2.6} />
+                  <Text style={[styles.cardLabelCharcoal, { color: '#FFFFFF', fontWeight: 'bold' }]}>
+                    BUDGET EXCEEDED WARNINGS ({calculations.overBudgetSubcategories.length})
+                  </Text>
+                </View>
                 <TouchableOpacity onPress={() => setCurrentTab('budget')}>
-                  <Text style={styles.charcoalCardLink}>View all ({calculations.transactions.length})</Text>
+                  <Text style={styles.charcoalCardLink}>View Budget</Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={{ gap: 8, marginTop: 4 }}>
-                {calculations.transactions.length === 0 ? (
-                  <View style={styles.emptyDarkState}>
-                    <Text style={styles.emptyDarkText}>No transactions recorded for this month</Text>
-                  </View>
-                ) : (
-                  calculations.transactions.slice(0, 5).map((tx) => (
-                    <TouchableOpacity
-                      key={tx.id}
-                      style={styles.darkTxCard}
-                      onPress={() => setEditingTransaction(tx)}
-                      activeOpacity={0.7}
-                    >
-                      <RenderCategoryIcon iconName={tx.icon} size={15} color="#FFFFFF" bgColor="#222222" />
-                      <View style={styles.darkTxDetails}>
-                        <Text style={styles.darkTxTitle} numberOfLines={1}>{tx.title}</Text>
-                        <Text style={styles.darkTxSub} numberOfLines={1}>
-                          {tx.categoryId === 'needs' ? 'Needs' : tx.categoryId === 'wants' ? 'Wants' : 'Savings'} → {tx.subcategoryName || 'General'} · {tx.date}
-                        </Text>
+              <View style={{ gap: 8, marginTop: 10 }}>
+                {calculations.overBudgetSubcategories.map((sub) => (
+                  <TouchableOpacity
+                    key={sub.id}
+                    style={styles.overBudgetAlertRow}
+                    onPress={() => setSelectedSubDetail({ catId: sub.parentCatId, subId: sub.id })}
+                    activeOpacity={0.8}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                        <RenderCategoryIcon iconName={sub.icon} size={14} color="#FFFFFF" bgColor="#222222" />
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#FFFFFF' }}>{sub.name}</Text>
+                          <Text style={{ fontSize: 11, color: '#8A8A8A' }}>
+                            Spent {formatCurr(sub.spent)} of {formatCurr(sub.budget)} ({sub.actualPercentSpent}%)
+                          </Text>
+                        </View>
                       </View>
-                      <Text style={styles.darkTxAmount}>− {formatCurr(tx.amount)}</Text>
-                    </TouchableOpacity>
-                  ))
-                )}
+                      <View style={styles.overBadgePill}>
+                        <Text style={styles.overBadgePillText}>+{formatCurr(sub.overAmount)} Over</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
+          )}
+
+          {/* Recent Transactions Charcoal Card */}
+          <View style={styles.charcoalBudgetCard}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
+              <TouchableOpacity onPress={() => setCurrentTab('budget')}>
+                <Text style={styles.charcoalCardLink}>View all ({calculations.transactions.length})</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ gap: 8, marginTop: 4 }}>
+              {calculations.transactions.length === 0 ? (
+                <View style={styles.emptyDarkState}>
+                  <Text style={styles.emptyDarkText}>No transactions recorded for this month</Text>
+                </View>
+              ) : (
+                calculations.transactions.slice(0, 5).map((tx) => (
+                  <TouchableOpacity
+                    key={tx.id}
+                    style={styles.darkTxCard}
+                    onPress={() => setEditingTransaction(tx)}
+                    activeOpacity={0.7}
+                  >
+                    <RenderCategoryIcon iconName={tx.icon} size={15} color="#FFFFFF" bgColor="#222222" />
+                    <View style={styles.darkTxDetails}>
+                      <Text style={styles.darkTxTitle} numberOfLines={1}>{tx.title}</Text>
+                      <Text style={styles.darkTxSub} numberOfLines={1}>
+                        {tx.categoryId === 'needs' ? 'Needs' : tx.categoryId === 'wants' ? 'Wants' : 'Savings'} → {tx.subcategoryName || 'General'} · {tx.date}
+                      </Text>
+                    </View>
+                    <Text style={styles.darkTxAmount}>− {formatCurr(tx.amount)}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
           </View>
-        )}
-      </View>
-    </ScrollView>
+
+          {/* Carousel Dots Indicator in Overview */}
+          <View style={[styles.homeCarouselDotsWrapper, { marginTop: 4 }]}>
+            <TouchableOpacity
+              onPress={() => {
+                setHomeSlide(0);
+                homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+              }}
+              style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setHomeSlide(1);
+                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+              }}
+              style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
+            />
+          </View>
+        </ScrollView>
+      </ScrollView>
+    </View>
   );
 
   // ----------------------------------------------------
@@ -5148,5 +5213,24 @@ const styles = StyleSheet.create({
   },
   homeCatChipTextActive: {
     color: '#090909',
+  },
+  homeCarouselDotsWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 6,
+  },
+  carouselDot: {
+    height: 6,
+    borderRadius: 3,
+  },
+  carouselDotActive: {
+    width: 22,
+    backgroundColor: '#FFFFFF',
+  },
+  carouselDotInactive: {
+    width: 6,
+    backgroundColor: '#333333',
   },
 });
