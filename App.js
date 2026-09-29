@@ -2694,32 +2694,89 @@ function MainApp() {
             {currentTab === 'settings' && renderSettings()}
           </Animated.View>
 
-          {/* FLOATING PILL BOTTOM NAVIGATION (Wider, Budgets | Home | Settings) */}
-          <View style={[styles.floatingBottomNavWrapper, { bottom: Math.max(18, insets.bottom + 10) }]}>
-            <View style={styles.floatingNavPill}>
-              {[
-                { id: 'budget', icon: Wallet, label: 'Budgets' },
-                { id: 'home', icon: Home, label: 'Home' },
-                { id: 'settings', icon: Settings, label: 'Settings' },
-              ].map((tab) => {
-                const IconComp = tab.icon;
-                const isSelected = currentTab === tab.id;
-                return (
-                  <TouchableOpacity
-                    key={tab.id}
-                    style={[styles.navPillItem, isSelected && styles.navPillItemActive]}
-                    onPress={() => switchTab(tab.id)}
-                    activeOpacity={0.85}
-                    accessibilityLabel={tab.label}
-                  >
-                    <IconComp
-                      size={24}
-                      color={isSelected ? '#090909' : '#8A8A8A'}
-                      strokeWidth={isSelected ? 2.6 : 2}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
+          {/* RAISED CURVED NOTCH BOTTOM NAVIGATION */}
+          <View
+            pointerEvents="box-none"
+            style={[styles.curvedBottomNavWrapper, { height: 75 + Math.max(12, insets.bottom) + 36 }]}
+          >
+            {/* SVG Background with Center Elevated Hump / Bell Curve */}
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+              <Svg
+                width={SCREEN_WIDTH}
+                height={75 + Math.max(12, insets.bottom) + 36}
+                viewBox={`0 0 ${SCREEN_WIDTH} ${75 + Math.max(12, insets.bottom) + 36}`}
+              >
+                {/* Dark Curved Body */}
+                <Path
+                  d={`M 0,34 L ${(SCREEN_WIDTH / 2) - 52},34 C ${(SCREEN_WIDTH / 2) - 26},34 ${(SCREEN_WIDTH / 2) - 26},4 ${SCREEN_WIDTH / 2},4 C ${(SCREEN_WIDTH / 2) + 26},4 ${(SCREEN_WIDTH / 2) + 26},34 ${(SCREEN_WIDTH / 2) + 52},34 L ${SCREEN_WIDTH},34 L ${SCREEN_WIDTH},${120 + insets.bottom} L 0,${120 + insets.bottom} Z`}
+                  fill="#121214"
+                />
+                {/* Sleek Top Border Accent */}
+                <Path
+                  d={`M 0,34 L ${(SCREEN_WIDTH / 2) - 52},34 C ${(SCREEN_WIDTH / 2) - 26},34 ${(SCREEN_WIDTH / 2) - 26},4 ${SCREEN_WIDTH / 2},4 C ${(SCREEN_WIDTH / 2) + 26},4 ${(SCREEN_WIDTH / 2) + 26},34 ${(SCREEN_WIDTH / 2) + 52},34 L ${SCREEN_WIDTH},34`}
+                  stroke="#26262E"
+                  strokeWidth={1.2}
+                  fill="none"
+                />
+              </Svg>
+            </View>
+
+            {/* Interactive Tab Navigation Content Row */}
+            <View
+              style={[
+                styles.curvedNavRow,
+                { paddingBottom: Math.max(12, insets.bottom) },
+              ]}
+            >
+              {/* Left Tab: Budgets */}
+              <TouchableOpacity
+                style={styles.curvedNavSideItem}
+                onPress={() => switchTab('budget')}
+                activeOpacity={0.7}
+              >
+                <Wallet
+                  size={22}
+                  color={currentTab === 'budget' ? '#FFFFFF' : '#8A8A8A'}
+                  strokeWidth={currentTab === 'budget' ? 2.6 : 1.8}
+                />
+                <Text style={[styles.curvedNavLabel, currentTab === 'budget' && styles.curvedNavLabelActive]}>
+                  Budgets
+                </Text>
+              </TouchableOpacity>
+
+              {/* Center Elevated Tab: Home */}
+              <TouchableOpacity
+                style={styles.curvedNavCenterItem}
+                onPress={() => switchTab('home')}
+                activeOpacity={0.85}
+              >
+                <View style={[styles.curvedNavCenterCircle, currentTab === 'home' && styles.curvedNavCenterCircleActive]}>
+                  <Home
+                    size={24}
+                    color={currentTab === 'home' ? '#090909' : '#FFFFFF'}
+                    strokeWidth={2.4}
+                  />
+                </View>
+                <Text style={[styles.curvedNavLabel, styles.curvedNavCenterLabel, currentTab === 'home' && styles.curvedNavLabelActive]}>
+                  Home
+                </Text>
+              </TouchableOpacity>
+
+              {/* Right Tab: Settings */}
+              <TouchableOpacity
+                style={styles.curvedNavSideItem}
+                onPress={() => switchTab('settings')}
+                activeOpacity={0.7}
+              >
+                <Settings
+                  size={22}
+                  color={currentTab === 'settings' ? '#FFFFFF' : '#8A8A8A'}
+                  strokeWidth={currentTab === 'settings' ? 2.6 : 1.8}
+                />
+                <Text style={[styles.curvedNavLabel, currentTab === 'settings' && styles.curvedNavLabelActive]}>
+                  Settings
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -3717,40 +3774,71 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // FLOATING PILL BOTTOM NAVIGATION
-  floatingBottomNavWrapper: {
+  // RAISED CURVED NOTCH BOTTOM NAVIGATION
+  curvedBottomNavWrapper: {
     position: 'absolute',
+    bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
+    justifyContent: 'flex-end',
     zIndex: 90,
   },
-  floatingNavPill: {
+  curvedNavRow: {
     flexDirection: 'row',
-    width: 290,
-    backgroundColor: '#141417',
-    borderRadius: 999,
-    padding: 6,
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#26262E',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.7,
-    shadowRadius: 20,
-    elevation: 16,
+    paddingHorizontal: 28,
+    height: 74,
   },
-  navPillItem: {
-    width: 86,
-    height: 50,
-    borderRadius: 25,
+  curvedNavSideItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    paddingBottom: 6,
+    gap: 4,
   },
-  navPillItemActive: {
+  curvedNavCenterItem: {
+    width: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -32,
+    gap: 3,
+  },
+  curvedNavCenterCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1E1E24',
+    borderWidth: 1,
+    borderColor: '#2F2F38',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  curvedNavCenterCircleActive: {
     backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+  },
+  curvedNavLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#8A8A8A',
+    letterSpacing: 0.2,
+  },
+  curvedNavCenterLabel: {
+    marginTop: 1,
+  },
+  curvedNavLabelActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   // Screen Headers
   screenHeaderRow: {
