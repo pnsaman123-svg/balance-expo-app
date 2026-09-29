@@ -1659,11 +1659,11 @@ function MainApp() {
               width: SCREEN_WIDTH,
               paddingHorizontal: 16,
               flex: 1,
-              justifyContent: 'space-between',
+              justifyContent: 'flex-end',
               paddingBottom: Math.max(16, insets.bottom + 85),
             }}
           >
-            {/* Top Hero Amount Row: Currency Code (USD/INR) on Left + Big Amount on Right */}
+            {/* Amount & Currency ISO Code directly right above the num pad */}
             <View style={styles.homeTopAmountRow}>
               <Text style={styles.homeCurrencyIsoCode}>{currencyIsoCode}</Text>
 
@@ -1682,37 +1682,16 @@ function MainApp() {
                     style={styles.homeInlineDeleteBtn}
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   >
-                    <Delete size={18} color="#8E8E93" strokeWidth={2.2} />
+                    <Delete size={20} color="#8E8E93" strokeWidth={2.2} />
                   </TouchableOpacity>
                 )}
               </View>
             </View>
 
-            {/* User Profile / Account Banner Card */}
-            <TouchableOpacity
-              style={styles.homeUserCard}
-              activeOpacity={0.85}
-              onPress={() => {
-                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-                setHomeSlide(1);
-              }}
-            >
-              <View style={styles.homeUserCardLeft}>
-                <Text style={styles.homeUserNameTitle}>
-                  {data?.userName || 'Samantha Jones'}
-                </Text>
-                <Text style={styles.homeUserSubtitle}>
-                  {calculations.transactions.length > 0
-                    ? `${calculations.transactions.length} transactions · Active`
-                    : '2766 •••• ••••'}
-                </Text>
-              </View>
-              <View style={styles.homeUserCardArrowPill}>
-                <ChevronRight size={18} color="#FFFFFF" strokeWidth={2.4} />
-              </View>
-            </TouchableOpacity>
+            {/* Spacer for Total Balance Pill Overlap */}
+            <View style={{ height: 16 }} />
 
-            {/* Keypad Container Card with Overlapping Total Balance Pill */}
+            {/* Expanded Height Keypad Container Card */}
             <View style={styles.homeKeypadContainerCard}>
               {/* Total Balance Pill Overlapping Top Edge */}
               <View style={styles.homeTotalBalancePillBadge}>
@@ -1799,9 +1778,9 @@ function MainApp() {
                     activeOpacity={0.8}
                   >
                     {parseFloat(homeAmountStr || '0') > 0 ? (
-                      <Check size={26} color="#000000" strokeWidth={3} />
+                      <Check size={28} color="#000000" strokeWidth={3} />
                     ) : (
-                      <Delete size={22} color="#71717A" strokeWidth={2.2} />
+                      <Delete size={24} color="#71717A" strokeWidth={2.2} />
                     )}
                   </TouchableOpacity>
                 </View>
@@ -5115,12 +5094,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    paddingHorizontal: 4,
-    marginTop: 2,
-    marginBottom: 10,
+    paddingHorizontal: 6,
+    marginBottom: 8,
   },
   homeCurrencyIsoCode: {
-    fontSize: 34,
+    fontSize: 36,
     fontWeight: '800',
     color: '#71717A',
     letterSpacing: 0.5,
@@ -5128,20 +5106,20 @@ const styles = StyleSheet.create({
   homeAmountRightSide: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 6,
+    gap: 8,
   },
   homeAmountSplitTextRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   homeAmountBigInteger: {
-    fontSize: 54,
+    fontSize: 58,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -1,
   },
   homeAmountSmallFraction: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: '#8E8E93',
     marginLeft: 2,
@@ -5149,63 +5127,28 @@ const styles = StyleSheet.create({
   },
   homeInlineDeleteBtn: {
     padding: 6,
-    marginBottom: 6,
+    marginBottom: 8,
     backgroundColor: '#1C1C20',
-    borderRadius: 10,
-  },
-  homeUserCard: {
-    backgroundColor: '#1A1A1E',
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#28282E',
-  },
-  homeUserCardLeft: {
-    gap: 3,
-  },
-  homeUserNameTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  homeUserSubtitle: {
-    fontSize: 12.5,
-    color: '#8E8E93',
-    fontWeight: '500',
-  },
-  homeUserCardArrowPill: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#28282E',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#34343C',
+    borderRadius: 12,
   },
   homeKeypadContainerCard: {
     backgroundColor: '#151518',
-    borderRadius: 28,
-    paddingHorizontal: 10,
-    paddingBottom: 12,
-    paddingTop: 24,
+    borderRadius: 32,
+    paddingHorizontal: 12,
+    paddingBottom: 16,
+    paddingTop: 28,
     borderWidth: 1,
     borderColor: '#222228',
     position: 'relative',
   },
   homeTotalBalancePillBadge: {
     position: 'absolute',
-    top: -16,
+    top: -18,
     alignSelf: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: '#000000',
     flexDirection: 'row',
@@ -5218,35 +5161,35 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   homeTotalBalancePillLabel: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '500',
     color: '#000000',
   },
   homeTotalBalancePillValue: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '800',
     color: '#000000',
   },
   homeKeyTilesGrid: {
-    gap: 8,
+    gap: 10,
     marginTop: 4,
   },
   homeKeyTileRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   homeKeyTileBtn: {
     flex: 1,
-    height: 62,
+    height: 72,
     backgroundColor: '#222227',
-    borderRadius: 16,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#2A2A30',
   },
   homeKeyTileNum: {
-    fontSize: 27,
+    fontSize: 30,
     fontWeight: '600',
     color: '#FFFFFF',
   },
