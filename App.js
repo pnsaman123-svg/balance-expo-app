@@ -271,6 +271,12 @@ function OnboardingRatioSliderTrack({ label, percent, amount, color, onPercentCh
   );
 }
 
+const triggerLayoutAnimation = () => {
+  try {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  } catch (e) {}
+};
+
 function MainApp() {
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -281,10 +287,7 @@ function MainApp() {
 
   const switchTab = (nextTab) => {
     if (nextTab === currentTab) return;
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    triggerLayoutAnimation();
     Animated.timing(tabFadeAnim, {
       toValue: 0,
       duration: 80,
@@ -310,10 +313,7 @@ function MainApp() {
   const [targetCatIdForNewSub, setTargetCatIdForNewSub] = useState('needs');
 
   const togglePillar = (catId) => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    triggerLayoutAnimation();
     setExpandedPillars((prev) => ({
       ...prev,
       [catId]: !prev[catId],
@@ -466,10 +466,7 @@ function MainApp() {
   };
 
   const toggleExpand = (catId) => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    triggerLayoutAnimation();
     setExpandedCat(expandedCat === catId ? null : catId);
   };
 
@@ -781,10 +778,7 @@ function MainApp() {
       },
     });
 
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    triggerLayoutAnimation();
     setIsAdjustAllocationOpen(false);
   };
 
@@ -1480,10 +1474,7 @@ function MainApp() {
                   ]}
                   onPress={() => {
                     if (pillarDiff <= 0) return;
-                    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-                      UIManager.setLayoutAnimationEnabledExperimental(true);
-                    }
-                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    triggerLayoutAnimation();
                     setNewSetupSubBudget(String(pillarDiff));
                     setIsAddingSetupSub(true);
                   }}
@@ -1503,10 +1494,7 @@ function MainApp() {
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
-                      if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-                        UIManager.setLayoutAnimationEnabledExperimental(true);
-                      }
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      triggerLayoutAnimation();
                       setIsAddingSetupSub(false);
                       setNewSetupSubName('');
                       setNewSetupSubBudget('');
@@ -1546,10 +1534,7 @@ function MainApp() {
                   <TouchableOpacity
                     onPress={() => {
                       handleAddSetupSubcategory();
-                      if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-                        UIManager.setLayoutAnimationEnabledExperimental(true);
-                      }
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      triggerLayoutAnimation();
                       setIsAddingSetupSub(false);
                     }}
                     disabled={!newSetupSubName.trim() || pillarDiff <= 0}
