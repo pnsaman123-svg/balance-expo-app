@@ -243,6 +243,65 @@ function MainApp() {
     }));
   };
 
+  // Home Screen Slide & Quick Entry State
+  const [homeSlide, setHomeSlide] = useState(0); // 0: Quick Entry Keypad, 1: Monthly Budget & Recent Tx
+  const [homeAmountStr, setHomeAmountStr] = useState('0');
+  const [homeCatId, setHomeCatId] = useState('needs');
+
+  const handleHomeKeypadPress = (val) => {
+    if (val === 'backspace') {
+      setHomeAmountStr((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
+      return;
+    }
+    if (val === '.') {
+      if (!homeAmountStr.includes('.')) {
+        setHomeAmountStr((prev) => prev + '.');
+      }
+      return;
+    }
+    setHomeAmountStr((prev) => {
+      if (prev === '0') return val;
+      if (prev.length >= 8) return prev;
+      return prev + val;
+    });
+  };
+
+  const handleQuickAddExpense = () => {
+    const num = parseFloat(homeAmountStr || '0') || 0;
+    if (num <= 0) return;
+
+    const curCat = currentMonthData.categories.find((c) => c.id === homeCatId) || currentMonthData.categories[0];
+    const curSub = curCat?.subcategories?.[0];
+
+    const newTx = {
+      id: `tx-${Date.now()}`,
+      title: curSub?.name || curCat?.name || 'Expense',
+      amount: num,
+      type: 'expense',
+      categoryId: homeCatId,
+      subcategoryId: curSub?.id,
+      subcategoryName: curSub?.name,
+      date: 'Today · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      icon: curSub?.icon || 'ShoppingBag',
+      notes: '',
+    };
+
+    const updatedMonth = {
+      ...currentMonthData,
+      transactions: [newTx, ...currentMonthData.transactions],
+    };
+
+    saveData({
+      ...data,
+      months: {
+        ...data.months,
+        [data.selectedMonthId]: updatedMonth,
+      },
+    });
+
+    setHomeAmountStr('0');
+  };
+
   // Keypad & Transaction Entry State (starts at 0)
   const [entryType, setEntryType] = useState('expense');
   const [amountStr, setAmountStr] = useState('');
@@ -1522,6 +1581,9 @@ function MainApp() {
   // ----------------------------------------------------
   // 1. DASHBOARD: DARK UPPER SECTION + FLOATING WHITE RECENT TRANSACTIONS SHEET
   // ----------------------------------------------------
+  // ----------------------------------------------------
+  // 1. DASHBOARD: SLIDE 1 (BIG NUMPAD & CENTERED REMAINING PILL) | SLIDE 2 (MONTHLY BUDGET & RECENT TX)
+  // ----------------------------------------------------
   const renderHome = () => (
     <ScrollView
       style={styles.scrollContainer}
@@ -1530,17 +1592,34 @@ function MainApp() {
     >
       {/* Dark Upper Dashboard Section */}
       <View style={styles.darkDashboardArea}>
-        {/* Header Row: Good morning + Month */}
+        {/* Top Header Row: Month Selector | Slide Toggle | Avatar (No 'Good Morning') */}
         <View style={styles.dashboardTopRow}>
-          <View>
-            <Text style={styles.goodMorningText}>Good morning</Text>
+          <TouchableOpacity
+            style={styles.monthSelectPill}
+            onPress={() => setIsMonthPickerOpen(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.monthSelectText}>{currentMonthData.monthName}</Text>
+            <ChevronDown size={14} color="#D6D6D6" style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
+
+          {/* Centered Segmented Slide Switcher */}
+          <View style={styles.homeSlideSegmentPill}>
             <TouchableOpacity
-              style={styles.monthSelectPill}
-              onPress={() => setIsMonthPickerOpen(true)}
-              activeOpacity={0.8}
+              onPress={() => setHomeSlide(0)}
+              style={[styles.homeSlideTabBtn, homeSlide === 0 && styles.homeSlideTabBtnActive]}
             >
-              <Text style={styles.monthSelectText}>{currentMonthData.monthName}</Text>
-              <ChevronDown size={14} color="#D6D6D6" style={{ marginLeft: 4 }} />
+              <Text style={[styles.homeSlideTabText, homeSlide === 0 && styles.homeSlideTabTextActive]}>
+                Keypad
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setHomeSlide(1)}
+              style={[styles.homeSlideTabBtn, homeSlide === 1 && styles.homeSlideTabBtnActive]}
+            >
+              <Text style={[styles.homeSlideTabText, homeSlide === 1 && styles.homeSlideTabTextActive]}>
+                Overview
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -1549,153 +1628,240 @@ function MainApp() {
           </View>
         </View>
 
-        {/* Large Prominent Hero Balance */}
-        <View style={styles.heroBalanceSection}>
-          <Text style={styles.heroBalanceDigits}>
-            {formatCurr(calculations.totalBalance)}
-          </Text>
-          <Text style={styles.heroBalanceSubLabel}>Remaining balance</Text>
-        </View>
-
-        {/* Quick Action Pills: + Expense, Budget, Income */}
-        <View style={styles.pillActionsRow}>
-          <TouchableOpacity
-            style={styles.actionPillWhite}
-            onPress={() => setIsAddExpenseOpen(true)}
-            activeOpacity={0.8}
-          >
-            <Plus size={14} color="#090909" strokeWidth={3} />
-            <Text style={styles.actionPillWhiteText}>+ Expense</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionPillCharcoal}
-            onPress={() => setCurrentTab('budget')}
-            activeOpacity={0.8}
-          >
-            <Wallet size={14} color="#FFFFFF" strokeWidth={2} />
-            <Text style={styles.actionPillCharcoalText}>Budget</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionPillCharcoal}
-            onPress={() => setIsAddIncomeOpen(true)}
-            activeOpacity={0.8}
-          >
-            <ArrowDownLeft size={14} color="#FFFFFF" strokeWidth={2} />
-            <Text style={styles.actionPillCharcoalText}>Income</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Floating Charcoal Monthly Budget Card */}
-        <View style={styles.charcoalBudgetCard}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
-            <View style={styles.budgetPercentPill}>
-              <Text style={styles.budgetPercentText}>{calculations.percentSpent}% used</Text>
-            </View>
-          </View>
-
-          <Text style={styles.budgetTotalLarge}>{formatCurr(calculations.totalIncome)}</Text>
-
-          <View style={styles.budgetMetaRow}>
-            <Text style={styles.budgetMetaText}>
-              Spent <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalSpent)}</Text>
-            </Text>
-            <Text style={styles.budgetMetaText}>
-              Remaining <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalBalance)}</Text>
-            </Text>
-          </View>
-
-          {/* High-Contrast Progress Bar */}
-          <View style={styles.progressTrackDark}>
-            <View
-              style={[
-                styles.progressFillLight,
-                { width: `${Math.min(100, Math.max(5, calculations.percentSpent))}%` },
-              ]}
-            />
-          </View>
-        </View>
-
-        {/* Over-Budget Warnings Alert Card */}
-        {calculations.overBudgetSubcategories.length > 0 && (
-          <View style={[styles.charcoalBudgetCard, styles.overBudgetAlertCard, { marginTop: 14 }]}>
-            <View style={styles.cardHeaderRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <AlertTriangle size={15} color="#FFFFFF" strokeWidth={2.6} />
-                <Text style={[styles.cardLabelCharcoal, { color: '#FFFFFF', fontWeight: 'bold' }]}>
-                  BUDGET EXCEEDED WARNINGS ({calculations.overBudgetSubcategories.length})
+        {homeSlide === 0 ? (
+          /* SLIDE 1: CENTERED REMAINING BALANCE PILL + BIG NUM PAD EXPENSE ENTRY */
+          <View style={{ paddingTop: 4 }}>
+            {/* Remaining Balance Pill in Center */}
+            <View style={styles.centerBalancePillWrapper}>
+              <View style={styles.centerBalancePill}>
+                <View style={styles.centerBalanceDot} />
+                <Text style={styles.centerBalancePillText}>
+                  {formatCurr(calculations.totalBalance)} Remaining
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => setCurrentTab('budget')}>
-                <Text style={styles.charcoalCardLink}>View Budget</Text>
-              </TouchableOpacity>
             </View>
 
-            <View style={{ gap: 8, marginTop: 10 }}>
-              {calculations.overBudgetSubcategories.map((sub) => (
+            {/* Big Amount Display */}
+            <View style={styles.homeAmountDisplaySection}>
+              <Text style={styles.homeAmountCurrency}>{data.currency}</Text>
+              <Text style={styles.homeAmountDigits} numberOfLines={1}>
+                {parseFloat(homeAmountStr || '0').toLocaleString('en-IN')}
+              </Text>
+            </View>
+
+            {/* Category Selector Pills */}
+            <View style={styles.homeCatSelectorRow}>
+              {['needs', 'wants', 'savings'].map((catKey) => {
+                const isSel = homeCatId === catKey;
+                return (
+                  <TouchableOpacity
+                    key={catKey}
+                    onPress={() => setHomeCatId(catKey)}
+                    style={[styles.homeCatChip, isSel && styles.homeCatChipActive]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.homeCatChipText, isSel && styles.homeCatChipTextActive]}>
+                      {catKey === 'needs' ? 'Needs' : catKey === 'wants' ? 'Wants' : 'Savings'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Big Number Pad (Keypad) */}
+            <View style={[styles.calcKeypadWrapperFilled, { marginTop: 10 }]}>
+              {/* Row 1 */}
+              <View style={styles.calcKeypadRow}>
+                {['1', '2', '3'].map((k) => (
+                  <TouchableOpacity
+                    key={k}
+                    style={styles.calcKeypadBtnFilled}
+                    onPress={() => handleHomeKeypadPress(k)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.calcKeypadTextFilled}>{k}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Row 2 */}
+              <View style={styles.calcKeypadRow}>
+                {['4', '5', '6'].map((k) => (
+                  <TouchableOpacity
+                    key={k}
+                    style={styles.calcKeypadBtnFilled}
+                    onPress={() => handleHomeKeypadPress(k)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.calcKeypadTextFilled}>{k}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Row 3 */}
+              <View style={styles.calcKeypadRow}>
+                {['7', '8', '9'].map((k) => (
+                  <TouchableOpacity
+                    key={k}
+                    style={styles.calcKeypadBtnFilled}
+                    onPress={() => handleHomeKeypadPress(k)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.calcKeypadTextFilled}>{k}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Row 4: Backspace | 0 | Tick to Record */}
+              <View style={styles.calcKeypadRow}>
                 <TouchableOpacity
-                  key={sub.id}
-                  style={styles.overBudgetAlertRow}
-                  onPress={() => setSelectedSubDetail({ catId: sub.parentCatId, subId: sub.id })}
+                  style={styles.calcKeypadBtnFilled}
+                  onPress={() => handleHomeKeypadPress('backspace')}
+                  activeOpacity={0.7}
+                >
+                  <Delete size={24} color="#FFFFFF" strokeWidth={2.4} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.calcKeypadBtnFilled}
+                  onPress={() => handleHomeKeypadPress('0')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.calcKeypadTextFilled}>0</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.calcKeypadBtnFilled,
+                    parseFloat(homeAmountStr || '0') > 0 ? styles.calcKeypadBtnTickActive : styles.calcKeypadBtnTickDisabled,
+                  ]}
+                  onPress={handleQuickAddExpense}
+                  disabled={parseFloat(homeAmountStr || '0') <= 0}
                   activeOpacity={0.8}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-                      <RenderCategoryIcon iconName={sub.icon} size={14} color="#FFFFFF" bgColor="#222222" />
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#FFFFFF' }}>{sub.name}</Text>
-                        <Text style={{ fontSize: 11, color: '#8A8A8A' }}>
-                          Spent {formatCurr(sub.spent)} of {formatCurr(sub.budget)} ({sub.actualPercentSpent}%)
+                  <Check
+                    size={26}
+                    color={parseFloat(homeAmountStr || '0') > 0 ? '#090909' : '#555555'}
+                    strokeWidth={3}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        ) : (
+          /* SLIDE 2: MONTHLY BUDGET & RECENT TRANSACTIONS */
+          <View style={{ gap: 14 }}>
+            {/* Monthly Budget Card */}
+            <View style={styles.charcoalBudgetCard}>
+              <View style={styles.cardHeaderRow}>
+                <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
+                <View style={styles.budgetPercentPill}>
+                  <Text style={styles.budgetPercentText}>{calculations.percentSpent}% used</Text>
+                </View>
+              </View>
+
+              <Text style={styles.budgetTotalLarge}>{formatCurr(calculations.totalIncome)}</Text>
+
+              <View style={styles.budgetMetaRow}>
+                <Text style={styles.budgetMetaText}>
+                  Spent <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalSpent)}</Text>
+                </Text>
+                <Text style={styles.budgetMetaText}>
+                  Remaining <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalBalance)}</Text>
+                </Text>
+              </View>
+
+              {/* High-Contrast Progress Bar */}
+              <View style={styles.progressTrackDark}>
+                <View
+                  style={[
+                    styles.progressFillLight,
+                    { width: `${Math.min(100, Math.max(5, calculations.percentSpent))}%` },
+                  ]}
+                />
+              </View>
+            </View>
+
+            {/* Over-Budget Warnings Alert Card */}
+            {calculations.overBudgetSubcategories.length > 0 && (
+              <View style={[styles.charcoalBudgetCard, styles.overBudgetAlertCard]}>
+                <View style={styles.cardHeaderRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <AlertTriangle size={15} color="#FFFFFF" strokeWidth={2.6} />
+                    <Text style={[styles.cardLabelCharcoal, { color: '#FFFFFF', fontWeight: 'bold' }]}>
+                      BUDGET EXCEEDED WARNINGS ({calculations.overBudgetSubcategories.length})
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setCurrentTab('budget')}>
+                    <Text style={styles.charcoalCardLink}>View Budget</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{ gap: 8, marginTop: 10 }}>
+                  {calculations.overBudgetSubcategories.map((sub) => (
+                    <TouchableOpacity
+                      key={sub.id}
+                      style={styles.overBudgetAlertRow}
+                      onPress={() => setSelectedSubDetail({ catId: sub.parentCatId, subId: sub.id })}
+                      activeOpacity={0.8}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                          <RenderCategoryIcon iconName={sub.icon} size={14} color="#FFFFFF" bgColor="#222222" />
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#FFFFFF' }}>{sub.name}</Text>
+                            <Text style={{ fontSize: 11, color: '#8A8A8A' }}>
+                              Spent {formatCurr(sub.spent)} of {formatCurr(sub.budget)} ({sub.actualPercentSpent}%)
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.overBadgePill}>
+                          <Text style={styles.overBadgePillText}>+{formatCurr(sub.overAmount)} Over</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Recent Transactions Charcoal Card */}
+            <View style={styles.charcoalBudgetCard}>
+              <View style={styles.cardHeaderRow}>
+                <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
+                <TouchableOpacity onPress={() => setCurrentTab('budget')}>
+                  <Text style={styles.charcoalCardLink}>View all ({calculations.transactions.length})</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ gap: 8, marginTop: 4 }}>
+                {calculations.transactions.length === 0 ? (
+                  <View style={styles.emptyDarkState}>
+                    <Text style={styles.emptyDarkText}>No transactions recorded for this month</Text>
+                  </View>
+                ) : (
+                  calculations.transactions.slice(0, 5).map((tx) => (
+                    <TouchableOpacity
+                      key={tx.id}
+                      style={styles.darkTxCard}
+                      onPress={() => setEditingTransaction(tx)}
+                      activeOpacity={0.7}
+                    >
+                      <RenderCategoryIcon iconName={tx.icon} size={15} color="#FFFFFF" bgColor="#222222" />
+                      <View style={styles.darkTxDetails}>
+                        <Text style={styles.darkTxTitle} numberOfLines={1}>{tx.title}</Text>
+                        <Text style={styles.darkTxSub} numberOfLines={1}>
+                          {tx.categoryId === 'needs' ? 'Needs' : tx.categoryId === 'wants' ? 'Wants' : 'Savings'} → {tx.subcategoryName || 'General'} · {tx.date}
                         </Text>
                       </View>
-                    </View>
-                    <View style={styles.overBadgePill}>
-                      <Text style={styles.overBadgePillText}>+{formatCurr(sub.overAmount)} Over</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                      <Text style={styles.darkTxAmount}>− {formatCurr(tx.amount)}</Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
             </View>
           </View>
         )}
-
-        {/* Recent Transactions Charcoal Card */}
-        <View style={[styles.charcoalBudgetCard, { marginTop: 14 }]}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
-            <TouchableOpacity onPress={() => setCurrentTab('budget')}>
-              <Text style={styles.charcoalCardLink}>View all ({calculations.transactions.length})</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ gap: 8, marginTop: 4 }}>
-            {calculations.transactions.length === 0 ? (
-              <View style={styles.emptyDarkState}>
-                <Text style={styles.emptyDarkText}>No transactions recorded for this month</Text>
-              </View>
-            ) : (
-              calculations.transactions.slice(0, 5).map((tx) => (
-                <TouchableOpacity
-                  key={tx.id}
-                  style={styles.darkTxCard}
-                  onPress={() => setEditingTransaction(tx)}
-                  activeOpacity={0.7}
-                >
-                  <RenderCategoryIcon iconName={tx.icon} size={15} color="#FFFFFF" bgColor="#222222" />
-                  <View style={styles.darkTxDetails}>
-                    <Text style={styles.darkTxTitle} numberOfLines={1}>{tx.title}</Text>
-                    <Text style={styles.darkTxSub} numberOfLines={1}>
-                      {tx.categoryId === 'needs' ? 'Needs' : tx.categoryId === 'wants' ? 'Wants' : 'Savings'} → {tx.subcategoryName || 'General'} · {tx.date}
-                    </Text>
-                  </View>
-                  <Text style={styles.darkTxAmount}>− {formatCurr(tx.amount)}</Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        </View>
       </View>
     </ScrollView>
   );
@@ -4886,5 +5052,101 @@ const styles = StyleSheet.create({
   pillarProgressBarFill: {
     height: '100%',
     borderRadius: 3.5,
+  },
+  // HOME 2-SLIDE & KEYPAD EXPENSE STYLES
+  homeSlideSegmentPill: {
+    flexDirection: 'row',
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#242424',
+    borderRadius: 20,
+    padding: 3,
+  },
+  homeSlideTabBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+  },
+  homeSlideTabBtnActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  homeSlideTabText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8A8A8A',
+  },
+  homeSlideTabTextActive: {
+    color: '#090909',
+  },
+  centerBalancePillWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 6,
+  },
+  centerBalancePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#242424',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 7,
+  },
+  centerBalanceDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#FFFFFF',
+  },
+  centerBalancePillText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  homeAmountDisplaySection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    marginVertical: 10,
+    gap: 6,
+  },
+  homeAmountCurrency: {
+    color: '#8A8A8A',
+    fontSize: 26,
+    fontWeight: '700',
+  },
+  homeAmountDigits: {
+    color: '#FFFFFF',
+    fontSize: 44,
+    fontWeight: '900',
+    letterSpacing: -1,
+  },
+  homeCatSelectorRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  homeCatChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#242424',
+  },
+  homeCatChipActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  homeCatChipText: {
+    color: '#8A8A8A',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  homeCatChipTextActive: {
+    color: '#090909',
   },
 });
