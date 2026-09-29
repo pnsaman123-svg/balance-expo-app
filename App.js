@@ -1620,23 +1620,8 @@ function MainApp() {
             </View>
           </View>
 
-          {/* Carousel Dots Indicator (Exact Same Vertical Position on Both Slides) */}
-          <View style={styles.homeCarouselDotsWrapper}>
-            <TouchableOpacity
-              onPress={() => {
-                setHomeSlide(0);
-                homeScrollRef.current?.scrollTo({ x: 0, animated: true });
-              }}
-              style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
-            />
-            <TouchableOpacity
-              onPress={() => {
-                setHomeSlide(1);
-                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-              }}
-              style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
-            />
-          </View>
+          {/* Spacer corresponding to fixed dots */}
+          <View style={{ height: 26 }} />
 
           {/* Bottom Section: Fixed Height 325 Keypad */}
           <View style={{ height: 325, justifyContent: 'center' }}>
@@ -1763,23 +1748,8 @@ function MainApp() {
             </View>
           </View>
 
-          {/* Carousel Dots Indicator (Exact Same Vertical Position on Both Slides) */}
-          <View style={styles.homeCarouselDotsWrapper}>
-            <TouchableOpacity
-              onPress={() => {
-                setHomeSlide(0);
-                homeScrollRef.current?.scrollTo({ x: 0, animated: true });
-              }}
-              style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
-            />
-            <TouchableOpacity
-              onPress={() => {
-                setHomeSlide(1);
-                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-              }}
-              style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
-            />
-          </View>
+          {/* Spacer corresponding to fixed dots */}
+          <View style={{ height: 26 }} />
 
           {/* Bottom Section: Fixed Height 325 Recent Transactions Card */}
           <View style={{ height: 325 }}>
@@ -1852,6 +1822,40 @@ function MainApp() {
           </View>
         </View>
       </ScrollView>
+
+      {/* 100% FIXED CAROUSEL DOTS - Sits static right above the 325px bottom section and NEVER shifts during swipe! */}
+      <View
+        pointerEvents="box-none"
+        style={{
+          position: 'absolute',
+          bottom: Math.max(20, insets.bottom + 85) + 325,
+          left: 0,
+          right: 0,
+          height: 26,
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10,
+        }}
+      >
+        <View style={styles.homeCarouselDotsWrapper}>
+          <TouchableOpacity
+            onPress={() => {
+              setHomeSlide(0);
+              homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+            }}
+            style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
+            activeOpacity={0.8}
+          />
+          <TouchableOpacity
+            onPress={() => {
+              setHomeSlide(1);
+              homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+            }}
+            style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
+            activeOpacity={0.8}
+          />
+        </View>
+      </View>
     </View>
   );
 
