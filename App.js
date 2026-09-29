@@ -29,15 +29,15 @@ import {
   Poppins_900Black,
 } from '@expo-google-fonts/poppins';
 
-// Helper to resolve exact Poppins font variant for crisp cross-platform rendering
+// Helper to resolve exact Poppins font variant for clean, neat, and professional typography
 const getPoppinsFont = (style) => {
   const flat = StyleSheet.flatten(style) || {};
   const weight = String(flat.fontWeight || '');
-  if (weight === '900' || weight === 'black') return 'Poppins_900Black';
-  if (weight === '800' || weight === 'extra-bold') return 'Poppins_800ExtraBold';
-  if (weight === '700' || weight === 'bold') return 'Poppins_700Bold';
-  if (weight === '600' || weight === 'semibold') return 'Poppins_600SemiBold';
-  if (weight === '500' || weight === 'medium') return 'Poppins_500Medium';
+  if (weight === '900' || weight === 'black') return 'Poppins_700Bold';
+  if (weight === '800' || weight === 'extra-bold') return 'Poppins_600SemiBold';
+  if (weight === '700' || weight === 'bold') return 'Poppins_600SemiBold';
+  if (weight === '600' || weight === 'semibold') return 'Poppins_500Medium';
+  if (weight === '500' || weight === 'medium') return 'Poppins_400Regular';
   if (weight === '300' || weight === 'light') return 'Poppins_300Light';
   return 'Poppins_400Regular';
 };
@@ -5173,8 +5173,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   homeCurrencyIsoCode: {
-    fontSize: 36,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '600',
     color: '#71717A',
     letterSpacing: 0.5,
   },
@@ -5183,14 +5183,14 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   homeAmountBigInteger: {
-    fontSize: 58,
-    fontWeight: '900',
+    fontSize: 48,
+    fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
   homeAmountSmallFraction: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '500',
     color: '#8E8E93',
     marginLeft: 2,
   },
@@ -5209,10 +5209,10 @@ const styles = StyleSheet.create({
     top: -24,
     alignSelf: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 7,
     borderRadius: 22,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: '#000000',
     flexDirection: 'row',
     alignItems: 'center',
@@ -5224,13 +5224,13 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   homeTotalBalancePillLabel: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '400',
     color: '#000000',
   },
   homeTotalBalancePillValue: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '600',
     color: '#000000',
   },
   homeKeyTilesGrid: {
@@ -5252,8 +5252,8 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A30',
   },
   homeKeyTileNum: {
-    fontSize: 30,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '500',
     color: '#FFFFFF',
   },
   homeKeyTileBtnActive: {
