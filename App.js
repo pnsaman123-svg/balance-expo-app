@@ -283,7 +283,7 @@ const REEL_WORDS = [];
 for (let i = 0; i < 40; i++) {
   REEL_WORDS.push(...SPLASH_BASE_PATTERN);
 }
-const SPLASH_SLOT_HEIGHT = 66;
+const SPLASH_SLOT_HEIGHT = 68;
 const START_INDEX = 30; // Starts at 'Spend' (30 % 3 === 0)
 
 function SplashRollingCarousel() {
@@ -351,23 +351,24 @@ function SplashRollingCarousel() {
               itemPos,
               itemPos + SPLASH_SLOT_HEIGHT,
             ],
-            outputRange: [0.90, 1.08, 0.90],
+            outputRange: [0.90, 1.10, 0.90],
             extrapolate: 'clamp',
           });
 
           return (
-            <Animated.View
-              key={i}
-              style={[
-                styles.splashSlotRow,
-                {
-                  opacity,
-                  transform: [{ scale }],
-                },
-              ]}
-            >
-              <Text style={styles.splashBoldText}>{word}</Text>
-            </Animated.View>
+            <View key={i} style={styles.splashSlotRow}>
+              <Animated.View
+                style={[
+                  styles.splashSlotItemWrapper,
+                  {
+                    opacity,
+                    transform: [{ scale }],
+                  },
+                ]}
+              >
+                <Text style={styles.splashBoldText}>{word}</Text>
+              </Animated.View>
+            </View>
           );
         })}
       </Animated.View>
@@ -4489,30 +4490,27 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   splashCarouselViewport: {
-    height: 198, // 66 * 3 slots
+    height: 204, // 68 * 3 slots
     overflow: 'hidden',
-    width: '100%',
+    width: SCREEN_WIDTH,
+    marginLeft: -32,
+    paddingLeft: 32,
+    paddingRight: 32,
     justifyContent: 'flex-start',
   },
   splashCarouselTrack: {
     width: '100%',
   },
   splashSlotRow: {
-    height: 66,
+    height: 68,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    paddingVertical: 2,
   },
-  splashTextStack: {
-    position: 'relative',
+  splashSlotItemWrapper: {
+    alignSelf: 'flex-start',
     justifyContent: 'center',
-  },
-  splashMutedText: {
-    fontSize: 32,
-    fontWeight: '400',
-    color: '#9E9E9E',
-    letterSpacing: -0.5,
-    lineHeight: 46,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   splashBoldText: {
     fontSize: 42,
@@ -4520,7 +4518,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     letterSpacing: -0.5,
     lineHeight: 52,
-    paddingHorizontal: 4,
+    includeFontPadding: false,
   },
   splashGradientWrapper: {
     position: 'absolute',
