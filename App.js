@@ -272,35 +272,9 @@ function MainApp() {
     const num = parseFloat(homeAmountStr || '0') || 0;
     if (num <= 0) return;
 
-    const curCat = currentMonthData.categories.find((c) => c.id === homeCatId) || currentMonthData.categories[0];
-    const curSub = curCat?.subcategories?.[0];
-
-    const newTx = {
-      id: `tx-${Date.now()}`,
-      title: curSub?.name || curCat?.name || 'Expense',
-      amount: num,
-      type: 'expense',
-      categoryId: homeCatId,
-      subcategoryId: curSub?.id,
-      subcategoryName: curSub?.name,
-      date: 'Today · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      icon: curSub?.icon || 'ShoppingBag',
-      notes: '',
-    };
-
-    const updatedMonth = {
-      ...currentMonthData,
-      transactions: [newTx, ...currentMonthData.transactions],
-    };
-
-    saveData({
-      ...data,
-      months: {
-        ...data.months,
-        [data.selectedMonthId]: updatedMonth,
-      },
-    });
-
+    setAmountStr(homeAmountStr);
+    setEntryType('expense');
+    setIsAddExpenseOpen(true);
     setHomeAmountStr('0');
   };
 
@@ -1588,7 +1562,7 @@ function MainApp() {
   // ----------------------------------------------------
   const renderHome = () => (
     <View style={{ flex: 1, backgroundColor: '#090909' }}>
-      {/* Top Header Row: Month Selector | Slide Toggle | Avatar (Fixed Header) */}
+      {/* Top Header Row: Month Selector | Avatar (Clean Minimal Header) */}
       <View style={[styles.dashboardTopRow, { marginHorizontal: 20, marginTop: 4, marginBottom: 8 }]}>
         <TouchableOpacity
           style={styles.monthSelectPill}
@@ -1598,32 +1572,6 @@ function MainApp() {
           <Text style={styles.monthSelectText}>{currentMonthData.monthName}</Text>
           <ChevronDown size={14} color="#D6D6D6" style={{ marginLeft: 4 }} />
         </TouchableOpacity>
-
-        {/* Centered Segmented Slide Switcher */}
-        <View style={styles.homeSlideSegmentPill}>
-          <TouchableOpacity
-            onPress={() => {
-              setHomeSlide(0);
-              homeScrollRef.current?.scrollTo({ x: 0, animated: true });
-            }}
-            style={[styles.homeSlideTabBtn, homeSlide === 0 && styles.homeSlideTabBtnActive]}
-          >
-            <Text style={[styles.homeSlideTabText, homeSlide === 0 && styles.homeSlideTabTextActive]}>
-              Keypad
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setHomeSlide(1);
-              homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-            }}
-            style={[styles.homeSlideTabBtn, homeSlide === 1 && styles.homeSlideTabBtnActive]}
-          >
-            <Text style={[styles.homeSlideTabText, homeSlide === 1 && styles.homeSlideTabTextActive]}>
-              Overview
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         <View style={styles.dashboardAvatar}>
           <Text style={styles.dashboardAvatarText}>{(data?.userName || 'U').charAt(0).toUpperCase()}</Text>
@@ -1653,7 +1601,7 @@ function MainApp() {
           }}
         >
           {/* Top Section */}
-          <View style={{ paddingTop: 4 }}>
+          <View style={{ paddingTop: 10 }}>
             {/* Remaining Balance Pill in Center */}
             <View style={styles.centerBalancePillWrapper}>
               <View style={styles.centerBalancePill}>
@@ -1665,35 +1613,34 @@ function MainApp() {
             </View>
 
             {/* Big Amount Display */}
-            <View style={styles.homeAmountDisplaySection}>
+            <View style={[styles.homeAmountDisplaySection, { marginTop: 24, marginBottom: 10 }]}>
               <Text style={styles.homeAmountCurrency}>{data.currency}</Text>
               <Text style={styles.homeAmountDigits} numberOfLines={1}>
                 {parseFloat(homeAmountStr || '0').toLocaleString('en-IN')}
               </Text>
             </View>
-
-            {/* Category Selector Pills */}
-            <View style={styles.homeCatSelectorRow}>
-              {['needs', 'wants', 'savings'].map((catKey) => {
-                const isSel = homeCatId === catKey;
-                return (
-                  <TouchableOpacity
-                    key={catKey}
-                    onPress={() => setHomeCatId(catKey)}
-                    style={[styles.homeCatChip, isSel && styles.homeCatChipActive]}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.homeCatChipText, isSel && styles.homeCatChipTextActive]}>
-                      {catKey === 'needs' ? 'Needs' : catKey === 'wants' ? 'Wants' : 'Savings'}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
           </View>
 
-          {/* Bottom Section: Big Number Pad + Carousel Swipe Dots */}
+          {/* Bottom Section: Carousel Swipe Dots (Just Above Num Pad) + Big Number Pad */}
           <View style={{ gap: 10 }}>
+            {/* Carousel Dots Indicator Just Above Num Pad */}
+            <View style={styles.homeCarouselDotsWrapper}>
+              <TouchableOpacity
+                onPress={() => {
+                  setHomeSlide(0);
+                  homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+                }}
+                style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  setHomeSlide(1);
+                  homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+                }}
+                style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
+              />
+            </View>
+
             <View style={styles.calcKeypadWrapperFilled}>
               {/* Row 1 */}
               <View style={styles.calcKeypadRow}>
@@ -1737,7 +1684,7 @@ function MainApp() {
                 ))}
               </View>
 
-              {/* Row 4: Backspace | 0 | Tick to Record */}
+              {/* Row 4: Backspace | 0 | Tick to Record & Select Category */}
               <View style={styles.calcKeypadRow}>
                 <TouchableOpacity
                   style={styles.calcKeypadBtnFilled}
@@ -1771,24 +1718,6 @@ function MainApp() {
                   />
                 </TouchableOpacity>
               </View>
-            </View>
-
-            {/* Carousel Dots Indicator below Keypad */}
-            <View style={styles.homeCarouselDotsWrapper}>
-              <TouchableOpacity
-                onPress={() => {
-                  setHomeSlide(0);
-                  homeScrollRef.current?.scrollTo({ x: 0, animated: true });
-                }}
-                style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
-              />
-              <TouchableOpacity
-                onPress={() => {
-                  setHomeSlide(1);
-                  homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-                }}
-                style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
-              />
             </View>
           </View>
         </View>
@@ -2693,20 +2622,6 @@ function MainApp() {
                 })}
               </View>
             </View>
-          )}
-
-          {/* FLOATING ADD EXPENSE FAB (BOTTOM RIGHT ON HOME) */}
-          {currentTab === 'home' && !isAddExpenseOpen && (
-            <TouchableOpacity
-              style={[
-                styles.floatingAddExpenseFab,
-                { bottom: Math.max(18, insets.bottom + 10) },
-              ]}
-              onPress={() => setIsAddExpenseOpen(true)}
-              activeOpacity={0.85}
-            >
-              <Plus size={26} color="#090909" strokeWidth={3} />
-            </TouchableOpacity>
           )}
 
           {/* Month Selector Modal */}
