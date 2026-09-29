@@ -1659,27 +1659,27 @@ function MainApp() {
               width: SCREEN_WIDTH,
               paddingHorizontal: 16,
               flex: 1,
-              justifyContent: 'flex-end',
+              justifyContent: 'space-between',
               paddingBottom: Math.max(16, insets.bottom + 85),
             }}
           >
-            {/* Amount & Currency ISO Code directly right above the num pad */}
-            <View style={styles.homeTopAmountRow}>
-              <Text style={styles.homeCurrencyIsoCode}>{currencyIsoCode}</Text>
+            {/* Centered INR & Amount between Top Bar and Num Pad */}
+            <View style={styles.homeAmountCenterWrapper}>
+              <View style={styles.homeAmountCenterRow}>
+                <Text style={styles.homeCurrencyIsoCodeCenter}>{currencyIsoCode}</Text>
 
-              <View style={styles.homeAmountRightSide}>
-                <View style={styles.homeAmountSplitTextRow}>
-                  <Text style={styles.homeAmountBigInteger} numberOfLines={1}>
+                <View style={styles.homeAmountSplitTextRowCenter}>
+                  <Text style={styles.homeAmountBigIntegerCenter} numberOfLines={1}>
                     {splitAmount.intStr}
                   </Text>
-                  <Text style={styles.homeAmountSmallFraction}>{splitAmount.decStr}</Text>
+                  <Text style={styles.homeAmountSmallFractionCenter}>{splitAmount.decStr}</Text>
                 </View>
 
                 {homeAmountStr !== '0' && (
                   <TouchableOpacity
                     onPress={() => handleHomeKeypadPress('backspace')}
                     onLongPress={() => setHomeAmountStr('0')}
-                    style={styles.homeInlineDeleteBtn}
+                    style={styles.homeInlineDeleteBtnCenter}
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   >
                     <Delete size={20} color="#8E8E93" strokeWidth={2.2} />
@@ -1687,9 +1687,6 @@ function MainApp() {
                 )}
               </View>
             </View>
-
-            {/* Spacer for Total Balance Pill Overlap */}
-            <View style={{ height: 16 }} />
 
             {/* Expanded Height Keypad Container Card */}
             <View style={styles.homeKeypadContainerCard}>
@@ -5090,46 +5087,46 @@ const styles = StyleSheet.create({
     borderRadius: 3.5,
   },
   // HOME 2-SLIDE & KEYPAD EXPENSE STYLES (GREY-NEAR-TO-BLACK SLEEK THEME)
-  homeTopAmountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingHorizontal: 6,
-    marginBottom: 8,
+  homeAmountCenterWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 14,
   },
-  homeCurrencyIsoCode: {
-    fontSize: 36,
+  homeAmountCenterRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  homeCurrencyIsoCodeCenter: {
+    fontSize: 34,
     fontWeight: '800',
     color: '#71717A',
     letterSpacing: 0.5,
   },
-  homeAmountRightSide: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  homeAmountSplitTextRow: {
+  homeAmountSplitTextRowCenter: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-  homeAmountBigInteger: {
+  homeAmountBigIntegerCenter: {
     fontSize: 58,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -1,
   },
-  homeAmountSmallFraction: {
+  homeAmountSmallFractionCenter: {
     fontSize: 24,
     fontWeight: '700',
     color: '#8E8E93',
     marginLeft: 2,
-    marginBottom: 4,
   },
-  homeInlineDeleteBtn: {
+  homeInlineDeleteBtnCenter: {
     padding: 6,
-    marginBottom: 8,
+    marginLeft: 6,
     backgroundColor: '#1C1C20',
     borderRadius: 12,
+    alignSelf: 'center',
   },
   homeKeypadContainerCard: {
     backgroundColor: '#151518',
