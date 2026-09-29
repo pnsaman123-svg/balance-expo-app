@@ -283,7 +283,7 @@ const REEL_WORDS = [];
 for (let i = 0; i < 40; i++) {
   REEL_WORDS.push(...SPLASH_BASE_PATTERN);
 }
-const SPLASH_SLOT_HEIGHT = 56;
+const SPLASH_SLOT_HEIGHT = 66;
 const START_INDEX = 30; // Starts at 'Spend' (30 % 3 === 0)
 
 function SplashRollingCarousel() {
@@ -314,7 +314,7 @@ function SplashRollingCarousel() {
     };
   }, []);
 
-  // Center slot is at y = 56 inside the 168px viewport.
+  // Center slot is at y = SPLASH_SLOT_HEIGHT inside the 3-slot viewport.
   // Track translateY = -scrollOffset + SPLASH_SLOT_HEIGHT
   const trackTranslateY = Animated.add(
     Animated.multiply(scrollOffset, -1),
@@ -351,7 +351,7 @@ function SplashRollingCarousel() {
               itemPos,
               itemPos + SPLASH_SLOT_HEIGHT,
             ],
-            outputRange: [0.90, 1.15, 0.90],
+            outputRange: [0.90, 1.08, 0.90],
             extrapolate: 'clamp',
           });
 
@@ -4489,7 +4489,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   splashCarouselViewport: {
-    height: 168, // 56 * 3 slots
+    height: 198, // 66 * 3 slots
     overflow: 'hidden',
     width: '100%',
     justifyContent: 'flex-start',
@@ -4498,27 +4498,29 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   splashSlotRow: {
-    height: 56,
+    height: 66,
     justifyContent: 'center',
     alignItems: 'flex-start',
+    paddingVertical: 2,
   },
   splashTextStack: {
     position: 'relative',
     justifyContent: 'center',
   },
   splashMutedText: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '400',
     color: '#9E9E9E',
     letterSpacing: -0.5,
     lineHeight: 46,
   },
   splashBoldText: {
-    fontSize: 46,
+    fontSize: 42,
     fontWeight: '800',
     color: '#000000',
     letterSpacing: -0.5,
-    lineHeight: 50,
+    lineHeight: 52,
+    paddingHorizontal: 4,
   },
   splashGradientWrapper: {
     position: 'absolute',
