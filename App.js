@@ -278,28 +278,35 @@ const triggerLayoutAnimation = () => {
   } catch (e) {}
 };
 
-const SPLASH_WORDS = ['Spend', 'Plan', 'Save'];
+const SPLASH_BASE_PATTERN = ['Spend', 'Save', 'Plan'];
+const REEL_WORDS = [];
+for (let i = 0; i < 40; i++) {
+  REEL_WORDS.push(...SPLASH_BASE_PATTERN);
+}
 const SPLASH_SLOT_HEIGHT = 56;
+const START_INDEX = 30; // Starts at 'Spend' (30 % 3 === 0)
 
 function SplashRollingCarousel() {
-  const [centerIdx, setCenterIdx] = useState(0); // 0: Spend, 1: Plan, 2: Save
-  const rollAnim = useRef(new Animated.Value(0)).current;
+  const currentIndexRef = useRef(START_INDEX);
+  const scrollOffset = useRef(new Animated.Value(START_INDEX * SPLASH_SLOT_HEIGHT)).current;
 
   useEffect(() => {
     let isMounted = true;
     const interval = setInterval(() => {
-      Animated.timing(rollAnim, {
-        toValue: 1,
-        duration: 550,
+      let nextIndex = currentIndexRef.current - 1;
+      if (nextIndex <= 6) {
+        nextIndex = START_INDEX + (nextIndex % 3);
+        scrollOffset.setValue((nextIndex + 1) * SPLASH_SLOT_HEIGHT);
+      }
+      currentIndexRef.current = nextIndex;
+
+      Animated.timing(scrollOffset, {
+        toValue: nextIndex * SPLASH_SLOT_HEIGHT,
+        duration: 600,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
         useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished && isMounted) {
-          rollAnim.setValue(0);
-          setCenterIdx((prev) => (prev + 1) % SPLASH_WORDS.length);
-        }
-      });
-    }, 2000);
+      }).start();
+    }, 2200);
 
     return () => {
       isMounted = false;
@@ -307,69 +314,12 @@ function SplashRollingCarousel() {
     };
   }, []);
 
-  // Words for the 4 slots:
-  // Next word to be centered is (centerIdx + 1) % 3
-  // Pos 1 (Top slot): incoming to center on roll -> SPLASH_WORDS[(centerIdx + 1) % 3]
-  // Pos 2 (Center slot): current active -> SPLASH_WORDS[centerIdx]
-  // Pos 3 (Bottom slot): moving down/out -> SPLASH_WORDS[(centerIdx - 1 + 3) % 3]
-  // Pos 0 (Above top): incoming from top -> SPLASH_WORDS[(centerIdx + 2) % 3]
-  const wIncoming = SPLASH_WORDS[(centerIdx + 2) % 3];
-  const wTop = SPLASH_WORDS[(centerIdx + 1) % 3];
-  const wCenter = SPLASH_WORDS[centerIdx];
-  const wBottom = SPLASH_WORDS[(centerIdx - 1 + 3) % 3];
-
-  const trackTranslateY = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-SPLASH_SLOT_HEIGHT, 0],
-  });
-
-  // Pos 0: above -> top
-  const pos0Opacity = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 0.35],
-  });
-  const pos0Scale = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.85, 0.90],
-  });
-
-  // Pos 1: top -> center (gains highlight)
-  const pos1Opacity = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.35, 1.0],
-  });
-  const pos1Scale = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.90, 1.15],
-  });
-  const pos1Bold = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
-  // Pos 2: center -> bottom (loses highlight)
-  const pos2Opacity = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1.0, 0.35],
-  });
-  const pos2Scale = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1.15, 0.90],
-  });
-  const pos2Bold = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0],
-  });
-
-  // Pos 3: bottom -> out below
-  const pos3Opacity = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.35, 0],
-  });
-  const pos3Scale = rollAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.90, 0.85],
-  });
+  // Center slot is at y = 56 inside the 168px viewport.
+  // Track translateY = -scrollOffset + SPLASH_SLOT_HEIGHT
+  const trackTranslateY = Animated.add(
+    Animated.multiply(scrollOffset, -1),
+    SPLASH_SLOT_HEIGHT
+  );
 
   return (
     <View style={styles.splashCarouselViewport}>
@@ -381,39 +331,45 @@ function SplashRollingCarousel() {
           },
         ]}
       >
-        {/* Pos 0: Incoming above top */}
-        <Animated.View style={[styles.splashSlotRow, { opacity: pos0Opacity, transform: [{ scale: pos0Scale }] }]}>
-          <Text style={styles.splashMutedText}>{wIncoming}</Text>
-        </Animated.View>
+        {REEL_WORDS.map((word, i) => {
+          const itemPos = i * SPLASH_SLOT_HEIGHT;
+          const opacity = scrollOffset.interpolate({
+            inputRange: [
+              itemPos - SPLASH_SLOT_HEIGHT * 2,
+              itemPos - SPLASH_SLOT_HEIGHT,
+              itemPos,
+              itemPos + SPLASH_SLOT_HEIGHT,
+              itemPos + SPLASH_SLOT_HEIGHT * 2,
+            ],
+            outputRange: [0, 0.35, 1.0, 0.35, 0],
+            extrapolate: 'clamp',
+          });
 
-        {/* Pos 1: Top slot -> Center slot (rolling down & becoming bold black) */}
-        <Animated.View style={[styles.splashSlotRow, { opacity: pos1Opacity, transform: [{ scale: pos1Scale }] }]}>
-          <View style={styles.splashTextStack}>
-            <Animated.View style={{ opacity: pos1Bold.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
-              <Text style={styles.splashMutedText}>{wTop}</Text>
-            </Animated.View>
-            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: pos1Bold }]}>
-              <Text style={styles.splashBoldText}>{wTop}</Text>
-            </Animated.View>
-          </View>
-        </Animated.View>
+          const scale = scrollOffset.interpolate({
+            inputRange: [
+              itemPos - SPLASH_SLOT_HEIGHT,
+              itemPos,
+              itemPos + SPLASH_SLOT_HEIGHT,
+            ],
+            outputRange: [0.90, 1.15, 0.90],
+            extrapolate: 'clamp',
+          });
 
-        {/* Pos 2: Center slot -> Bottom slot (rolling down & becoming muted) */}
-        <Animated.View style={[styles.splashSlotRow, { opacity: pos2Opacity, transform: [{ scale: pos2Scale }] }]}>
-          <View style={styles.splashTextStack}>
-            <Animated.View style={{ opacity: pos2Bold.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
-              <Text style={styles.splashMutedText}>{wCenter}</Text>
+          return (
+            <Animated.View
+              key={i}
+              style={[
+                styles.splashSlotRow,
+                {
+                  opacity,
+                  transform: [{ scale }],
+                },
+              ]}
+            >
+              <Text style={styles.splashBoldText}>{word}</Text>
             </Animated.View>
-            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: pos2Bold }]}>
-              <Text style={styles.splashBoldText}>{wCenter}</Text>
-            </Animated.View>
-          </View>
-        </Animated.View>
-
-        {/* Pos 3: Bottom slot -> Exiting below */}
-        <Animated.View style={[styles.splashSlotRow, { opacity: pos3Opacity, transform: [{ scale: pos3Scale }] }]}>
-          <Text style={styles.splashMutedText}>{wBottom}</Text>
-        </Animated.View>
+          );
+        })}
       </Animated.View>
     </View>
   );
