@@ -19,6 +19,14 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Rect, Path, Circle, G } from 'react-native-svg';
 import {
+  useFonts,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import {
   Home,
   Receipt,
   Wallet,
@@ -3046,7 +3054,35 @@ function MainApp() {
   );
 }
 
+// Apply Premium Plus Jakarta Sans as default font across the entire mobile app
+if (Text.defaultProps == null) Text.defaultProps = {};
+Text.defaultProps.style = { fontFamily: 'PlusJakartaSans_500Medium' };
+
+if (TextInput.defaultProps == null) TextInput.defaultProps = {};
+TextInput.defaultProps.style = { fontFamily: 'PlusJakartaSans_500Medium' };
+
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+    'PlusJakartaSans-Regular': PlusJakartaSans_400Regular,
+    'PlusJakartaSans-Medium': PlusJakartaSans_500Medium,
+    'PlusJakartaSans-SemiBold': PlusJakartaSans_600SemiBold,
+    'PlusJakartaSans-Bold': PlusJakartaSans_700Bold,
+    'PlusJakartaSans-ExtraBold': PlusJakartaSans_800ExtraBold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#090909' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#090909" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <MainApp />
