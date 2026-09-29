@@ -275,7 +275,6 @@ function MainApp() {
     setAmountStr(homeAmountStr);
     setEntryType('expense');
     setIsAddExpenseOpen(true);
-    setHomeAmountStr('0');
   };
 
   // Keypad & Transaction Entry State (starts at 0)
@@ -563,6 +562,8 @@ function MainApp() {
     });
 
     setIsAddExpenseOpen(false);
+    setHomeAmountStr('0');
+    setAmountStr('0');
     setExpenseTitle('');
     setExpenseNotes('');
   };
@@ -1860,9 +1861,9 @@ function MainApp() {
   );
 
   // ----------------------------------------------------
-  // 2. LIGHT/WHITE SURFACE ADD EXPENSE SCREEN + 3-COLUMN SOFT KEYPAD
+  // 2. DARK SLIDE-IN CATEGORIZE & SAVE EXPENSE BOTTOM SHEET
   // ----------------------------------------------------
-  const renderAddExpense = () => {
+  const renderAddExpenseModal = () => {
     const curCat = currentMonthData.categories.find((c) => c.id === selectedCatId);
     const curSub = curCat?.subcategories.find((s) => s.id === selectedSubId) || curCat?.subcategories[0];
 
@@ -1878,156 +1879,141 @@ function MainApp() {
     const projectedPercent = subLimit > 0 ? Math.round((projectedSpent / subLimit) * 100) : 0;
 
     return (
-      <View style={[styles.lightAddExpenseContainer, { paddingTop: insets.top + 6, paddingBottom: insets.bottom + 8 }]}>
-        {/* Top Header */}
-        <View style={styles.lightSheetHeader}>
+      <Modal
+        visible={isAddExpenseOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsAddExpenseOpen(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.darkModalBackdropBottom}
+        >
           <TouchableOpacity
-            style={styles.lightCloseCircleBtn}
+            style={styles.modalDismissTouchable}
+            activeOpacity={1}
             onPress={() => setIsAddExpenseOpen(false)}
-          >
-            <X size={18} color="#090909" strokeWidth={2.5} />
-          </TouchableOpacity>
-          <Text style={styles.lightSheetHeading}>Add Expense</Text>
-          <View style={{ width: 36 }} />
-        </View>
+          />
+          <View style={[styles.darkSlideInCard, { paddingBottom: Math.max(20, insets.bottom + 12) }]}>
+            {/* Drag Handle */}
+            <View style={styles.sheetHandleIndicatorDark} />
 
-        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-          {/* Giant Amount Display */}
-          <View style={styles.giantAmountContainer}>
-            <Text style={styles.giantAmountCurrency}>{data.currency}</Text>
-            <Text style={styles.giantAmountDigits} numberOfLines={1}>
-              {parseFloat(amountStr || '0').toLocaleString('en-IN')}
-            </Text>
-          </View>
+            {/* Header */}
+            <View style={styles.darkSheetHeader}>
+              <View>
+                <Text style={styles.darkSheetHeading}>Categorize Expense</Text>
+                <Text style={styles.darkSheetSubHeading}>Select pillar & subcategory</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.darkCloseCircleBtn}
+                onPress={() => setIsAddExpenseOpen(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <X size={18} color="#8A8A8A" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
 
-          {/* Category Pill Segmented Switcher: Needs | Wants | Savings */}
-          <View style={styles.categoryPillSegmentRow}>
-            {['needs', 'wants', 'savings'].map((catKey) => {
-              const isSel = selectedCatId === catKey;
-              const catObj = currentMonthData.categories.find((c) => c.id === catKey);
-              return (
-                <TouchableOpacity
-                  key={catKey}
-                  onPress={() => {
-                    setSelectedCatId(catKey);
-                    if (catObj?.subcategories?.length > 0) {
-                      setSelectedSubId(catObj.subcategories[0].id);
-                    }
-                  }}
-                  style={[styles.categorySegmentPill, isSel && styles.categorySegmentPillActive]}
-                >
-                  <Text style={[styles.categorySegmentPillText, isSel && styles.categorySegmentPillTextActive]}>
-                    {catKey === 'needs' ? 'Needs' : catKey === 'wants' ? 'Wants' : 'Savings'}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+              {/* Giant Amount Display */}
+              <View style={styles.darkGiantAmountContainer}>
+                <Text style={styles.darkGiantAmountCurrency}>{data.currency}</Text>
+                <Text style={styles.darkGiantAmountDigits} numberOfLines={1}>
+                  {parseFloat(amountStr || '0').toLocaleString('en-IN')}
+                </Text>
+              </View>
 
-          {/* Dynamic Subcategories Horizontal Chips */}
-          <View style={styles.subcategoryChipsSection}>
-            <Text style={styles.subcategorySectionLabel}>SELECT SUBCATEGORY</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-              {curCat?.subcategories.map((sub) => {
-                const isSelected = selectedSubId === sub.id;
-                return (
-                  <TouchableOpacity
-                    key={sub.id}
-                    style={[styles.lightSubChip, isSelected && styles.lightSubChipActive]}
-                    onPress={() => setSelectedSubId(sub.id)}
-                  >
-                    <RenderCategoryIcon
-                      iconName={sub.icon}
-                      size={12}
-                      color={isSelected ? '#FFFFFF' : '#090909'}
-                      bgColor={isSelected ? '#090909' : '#EAEAEA'}
-                    />
-                    <Text style={[styles.lightSubChipText, isSelected && styles.lightSubChipTextActive]}>
-                      {sub.name}
+              {/* Category Pill Segmented Switcher: Needs | Wants | Savings */}
+              <View style={styles.darkCategoryPillSegmentRow}>
+                {['needs', 'wants', 'savings'].map((catKey) => {
+                  const isSel = selectedCatId === catKey;
+                  const catObj = currentMonthData.categories.find((c) => c.id === catKey);
+                  return (
+                    <TouchableOpacity
+                      key={catKey}
+                      onPress={() => {
+                        setSelectedCatId(catKey);
+                        if (catObj?.subcategories?.length > 0) {
+                          setSelectedSubId(catObj.subcategories[0].id);
+                        }
+                      }}
+                      style={[styles.darkCategorySegmentPill, isSel && styles.darkCategorySegmentPillActive]}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.darkCategorySegmentPillText, isSel && styles.darkCategorySegmentPillTextActive]}>
+                        {catKey === 'needs' ? 'Needs' : catKey === 'wants' ? 'Wants' : 'Savings'}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Dynamic Subcategories Horizontal Chips */}
+              <View style={styles.darkSubcategoryChipsSection}>
+                <Text style={styles.darkSubcategorySectionLabel}>SELECT SUBCATEGORY</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+                  {curCat?.subcategories.map((sub) => {
+                    const isSelected = selectedSubId === sub.id;
+                    return (
+                      <TouchableOpacity
+                        key={sub.id}
+                        style={[styles.darkSubChip, isSelected && styles.darkSubChipActive]}
+                        onPress={() => setSelectedSubId(sub.id)}
+                        activeOpacity={0.75}
+                      >
+                        <RenderCategoryIcon
+                          iconName={sub.icon}
+                          size={13}
+                          color={isSelected ? '#090909' : '#FFFFFF'}
+                          bgColor={isSelected ? '#FFFFFF' : '#222222'}
+                        />
+                        <Text style={[styles.darkSubChipText, isSelected && styles.darkSubChipTextActive]}>
+                          {sub.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Live Over-Budget Warning Banner */}
+              {willExceed && (
+                <View style={styles.darkOverBudgetWarningBanner}>
+                  <AlertTriangle size={16} color="#FF6B6B" strokeWidth={2.4} style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={styles.darkOverBudgetWarningTitle}>
+                      Budget Exceeded Warning ({projectedPercent}%)
                     </Text>
-                  </TouchableOpacity>
-                );
-              })}
+                    <Text style={styles.darkOverBudgetWarningDesc}>
+                      {curSub?.name} budget is {formatCurr(subLimit)}. This entry exceeds it by {formatCurr(exceedByAmount)} (Total: {formatCurr(projectedSpent)}).
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Optional Title / Notes input */}
+              <View style={styles.darkExpenseInputWrapper}>
+                <TextInput
+                  placeholder="Expense description (optional)"
+                  placeholderTextColor="#666666"
+                  value={expenseTitle}
+                  onChangeText={setExpenseTitle}
+                  style={styles.darkExpenseDescInput}
+                />
+              </View>
             </ScrollView>
-          </View>
 
-          {/* Live Over-Budget Warning Banner */}
-          {willExceed && (
-            <View style={styles.overBudgetWarningBanner}>
-              <View style={styles.overBudgetWarningIconBox}>
-                <AlertTriangle size={18} color="#FFFFFF" strokeWidth={2.4} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.overBudgetWarningTitle}>
-                  ⚠️ Budget Exceeded Warning ({projectedPercent}%)
-                </Text>
-                <Text style={styles.overBudgetWarningDesc}>
-                  {curSub?.name} budget is {formatCurr(subLimit)}. This entry of {formatCurr(enteredNum)} will exceed it by {formatCurr(exceedByAmount)} (Total: {formatCurr(projectedSpent)}).
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Optional Title / Notes input */}
-          <View style={styles.expenseInputWrapper}>
-            <TextInput
-              placeholder="Expense description (optional)"
-              placeholderTextColor="#8A8A8A"
-              value={expenseTitle}
-              onChangeText={setExpenseTitle}
-              style={styles.expenseDescInput}
-            />
-          </View>
-
-          {/* 3-Column Soft Keypad */}
-          <View style={styles.keypad3ColContainer}>
-            <View style={styles.keypad3ColRow}>
-              {['1', '2', '3'].map((k) => (
-                <TouchableOpacity key={k} style={styles.keypad3ColBtn} onPress={() => handleKeypadPress(k)}>
-                  <Text style={styles.keypad3ColText}>{k}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.keypad3ColRow}>
-              {['4', '5', '6'].map((k) => (
-                <TouchableOpacity key={k} style={styles.keypad3ColBtn} onPress={() => handleKeypadPress(k)}>
-                  <Text style={styles.keypad3ColText}>{k}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.keypad3ColRow}>
-              {['7', '8', '9'].map((k) => (
-                <TouchableOpacity key={k} style={styles.keypad3ColBtn} onPress={() => handleKeypadPress(k)}>
-                  <Text style={styles.keypad3ColText}>{k}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.keypad3ColRow}>
-              <TouchableOpacity style={styles.keypad3ColBtn} onPress={() => handleKeypadPress('.')}>
-                <Text style={styles.keypad3ColText}>.</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypad3ColBtn} onPress={() => handleKeypadPress('0')}>
-                <Text style={styles.keypad3ColText}>0</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypad3ColBtn} onPress={() => handleKeypadPress('backspace')}>
-                <Delete size={20} color="#090909" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Full-width Black Action Button */}
-          <View style={{ paddingHorizontal: 16, marginTop: 12, marginBottom: 16 }}>
+            {/* Full-width High-Contrast Save Expense Action Button */}
             <TouchableOpacity
-              style={styles.saveExpenseBtn}
+              style={styles.darkSaveExpenseBtn}
               onPress={handleAddExpense}
               activeOpacity={0.85}
             >
-              <Check size={16} color="#FFFFFF" strokeWidth={3} />
-              <Text style={styles.saveExpenseBtnText}>Save Expense</Text>
+              <Check size={18} color="#090909" strokeWidth={3} />
+              <Text style={styles.darkSaveExpenseBtnText}>Save Expense</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </View>
+        </KeyboardAvoidingView>
+      </Modal>
     );
   };
 
@@ -2580,48 +2566,43 @@ function MainApp() {
         <>
           {/* Main Content View */}
           <View style={styles.mainContent}>
-            {isAddExpenseOpen ? (
-              renderAddExpense()
-            ) : (
-              <>
-                {currentTab === 'home' && renderHome()}
-                {currentTab === 'transactions' && renderTransactions()}
-                {currentTab === 'budget' && renderBudget()}
-                {currentTab === 'analytics' && renderAnalytics()}
-                {currentTab === 'settings' && renderSettings()}
-              </>
-            )}
+            {currentTab === 'home' && renderHome()}
+            {currentTab === 'transactions' && renderTransactions()}
+            {currentTab === 'budget' && renderBudget()}
+            {currentTab === 'analytics' && renderAnalytics()}
+            {currentTab === 'settings' && renderSettings()}
           </View>
 
           {/* FLOATING PILL BOTTOM NAVIGATION */}
-          {!isAddExpenseOpen && (
-            <View style={[styles.floatingBottomNavWrapper, { bottom: Math.max(18, insets.bottom + 10) }]}>
-              <View style={styles.floatingNavPill}>
-                {[
-                  { id: 'home', icon: Home },
-                  { id: 'budget', icon: Wallet },
-                  { id: 'settings', icon: Settings },
-                ].map((tab) => {
-                  const IconComp = tab.icon;
-                  const isSelected = currentTab === tab.id;
-                  return (
-                    <TouchableOpacity
-                      key={tab.id}
-                      style={[styles.navPillItem, isSelected && styles.navPillItemActive]}
-                      onPress={() => setCurrentTab(tab.id)}
-                      activeOpacity={0.85}
-                    >
-                      <IconComp
-                        size={24}
-                        color={isSelected ? '#090909' : '#8A8A8A'}
-                        strokeWidth={isSelected ? 2.6 : 2}
-                      />
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+          <View style={[styles.floatingBottomNavWrapper, { bottom: Math.max(18, insets.bottom + 10) }]}>
+            <View style={styles.floatingNavPill}>
+              {[
+                { id: 'home', icon: Home },
+                { id: 'budget', icon: Wallet },
+                { id: 'settings', icon: Settings },
+              ].map((tab) => {
+                const IconComp = tab.icon;
+                const isSelected = currentTab === tab.id;
+                return (
+                  <TouchableOpacity
+                    key={tab.id}
+                    style={[styles.navPillItem, isSelected && styles.navPillItemActive]}
+                    onPress={() => setCurrentTab(tab.id)}
+                    activeOpacity={0.85}
+                  >
+                    <IconComp
+                      size={24}
+                      color={isSelected ? '#090909' : '#8A8A8A'}
+                      strokeWidth={isSelected ? 2.6 : 2}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-          )}
+          </View>
+
+          {/* Dark Categorize & Save Expense Slide-in Bottom Sheet Modal */}
+          {renderAddExpenseModal()}
 
           {/* Month Selector Modal */}
           <Modal visible={isMonthPickerOpen} transparent animationType="fade">
@@ -5146,5 +5127,194 @@ const styles = StyleSheet.create({
   carouselDotInactive: {
     width: 6,
     backgroundColor: '#333333',
+  },
+  // DARK SLIDE-IN CATEGORIZE EXPENSE BOTTOM SHEET STYLES
+  darkModalBackdropBottom: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'flex-end',
+  },
+  modalDismissTouchable: {
+    flex: 1,
+  },
+  darkSlideInCard: {
+    backgroundColor: '#141414',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: '#262626',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  sheetHandleIndicatorDark: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#333333',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  darkSheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  darkSheetHeading: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  darkSheetSubHeading: {
+    color: '#8A8A8A',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  darkCloseCircleBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#202020',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  darkGiantAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    marginVertical: 10,
+  },
+  darkGiantAmountCurrency: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#8A8A8A',
+    marginRight: 6,
+  },
+  darkGiantAmountDigits: {
+    fontSize: 44,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -1,
+  },
+  darkCategoryPillSegmentRow: {
+    flexDirection: 'row',
+    backgroundColor: '#1C1C1C',
+    borderRadius: 16,
+    padding: 4,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#262626',
+    marginBottom: 14,
+  },
+  darkCategorySegmentPill: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  darkCategorySegmentPillActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  darkCategorySegmentPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#8A8A8A',
+  },
+  darkCategorySegmentPillTextActive: {
+    color: '#090909',
+    fontWeight: '800',
+  },
+  darkSubcategoryChipsSection: {
+    marginBottom: 14,
+  },
+  darkSubcategorySectionLabel: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#8A8A8A',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  darkSubChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1C1C1C',
+    borderWidth: 1,
+    borderColor: '#282828',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 16,
+  },
+  darkSubChipActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  darkSubChipText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  darkSubChipTextActive: {
+    color: '#090909',
+    fontWeight: '800',
+  },
+  darkOverBudgetWarningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#201212',
+    borderWidth: 1,
+    borderColor: '#401A1A',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
+  },
+  darkOverBudgetWarningTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FF7575',
+  },
+  darkOverBudgetWarningDesc: {
+    fontSize: 11,
+    color: '#D0A0A0',
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  darkExpenseInputWrapper: {
+    marginBottom: 14,
+  },
+  darkExpenseDescInput: {
+    backgroundColor: '#1C1C1C',
+    borderWidth: 1,
+    borderColor: '#282828',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    color: '#FFFFFF',
+    fontSize: 13,
+  },
+  darkSaveExpenseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 15,
+    borderRadius: 18,
+    marginTop: 6,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  darkSaveExpenseBtnText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#090909',
   },
 });
