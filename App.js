@@ -987,11 +987,11 @@ function MainApp() {
               </View>
 
               {/* Large Short Headline */}
-              <Text style={styles.splashHeadline}>Your money,{"\n"}in balance.</Text>
+              <Text style={styles.splashHeadline}>Your wealth,{"\n"}in perfect balance.</Text>
 
               {/* Small Supporting Description */}
               <Text style={styles.splashSubtext}>
-                Plan your income, track your spending,{"\n"}and know exactly where your money goes.
+                Master your cash flow with 50/30/20 discipline,{"\n"}track real-time outflows, and achieve clarity.
               </Text>
             </Animated.View>
 
@@ -1024,7 +1024,7 @@ function MainApp() {
                 <Text style={styles.splashPrimaryBtnText}>Get Started</Text>
               </TouchableOpacity>
 
-              {/* Secondary: I already have an account (Very light grey background, Black text) */}
+              {/* Secondary: Restore / Default demo profile */}
               <TouchableOpacity
                 style={styles.splashSecondaryBtn}
                 onPress={() => {
@@ -1036,7 +1036,7 @@ function MainApp() {
                 }}
                 activeOpacity={0.85}
               >
-                <Text style={styles.splashSecondaryBtnText}>I already have an account</Text>
+                <Text style={styles.splashSecondaryBtnText}>Restore Default Profile</Text>
               </TouchableOpacity>
             </Animated.View>
           </View>
@@ -1049,7 +1049,7 @@ function MainApp() {
         <View style={[styles.onboardingContainer, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 12, justifyContent: 'space-between', paddingHorizontal: 16 }]}>
           {/* Top Title Only */}
           <View style={{ paddingTop: 6 }}>
-            <Text style={styles.onboardingStepTitle}>What is your monthly income?</Text>
+            <Text style={styles.onboardingStepTitle}>Monthly Net Income</Text>
           </View>
 
           {/* Large Hero Calculator Display */}
@@ -1174,7 +1174,7 @@ function MainApp() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
             {/* Header Title Only (No Subtext) */}
             <View style={{ paddingTop: 6, marginBottom: 18 }}>
-              <Text style={styles.onboardingStepTitle}>Where should your money go?</Text>
+              <Text style={styles.onboardingStepTitle}>Target Allocation Strategy</Text>
             </View>
 
             {/* Horizontal Segmented Ratio Visualizer Bar */}
@@ -1203,10 +1203,10 @@ function MainApp() {
             {/* Ratio Presets Below Top Bar */}
             <View style={styles.ratioPillsRow}>
               {[
-                { ratio: '50/30/20', n: 50, w: 30, s: 20 },
-                { ratio: '60/20/20', n: 60, w: 20, s: 20 },
-                { ratio: '70/20/10', n: 70, w: 20, s: 10 },
-                { ratio: '40/30/30', n: 40, w: 30, s: 30 },
+                { ratio: '50/30/20 (Balanced)', n: 50, w: 30, s: 20 },
+                { ratio: '60/20/20 (Essentials)', n: 60, w: 20, s: 20 },
+                { ratio: '70/20/10 (Frugal)', n: 70, w: 20, s: 10 },
+                { ratio: '40/30/30 (Saver)', n: 40, w: 30, s: 30 },
               ].map((r) => {
                 const isMatch =
                   setupPercent.needs === r.n &&
@@ -1230,7 +1230,7 @@ function MainApp() {
             {/* Horizontal Sliders for Each Pillar (No Subtext) */}
             <View style={{ gap: 12 }}>
               <OnboardingRatioSliderTrack
-                label="Needs"
+                label="Needs (Fixed Living)"
                 percent={setupPercent.needs}
                 amount={allocNeeds}
                 color="#FFFFFF"
@@ -1239,7 +1239,7 @@ function MainApp() {
               />
 
               <OnboardingRatioSliderTrack
-                label="Wants"
+                label="Wants (Discretionary)"
                 percent={setupPercent.wants}
                 amount={allocWants}
                 color="#8E8E93"
@@ -1248,7 +1248,7 @@ function MainApp() {
               />
 
               <OnboardingRatioSliderTrack
-                label="Savings"
+                label="Savings (Wealth & Debt)"
                 percent={setupPercent.savings}
                 amount={allocSavings}
                 color="#636366"
@@ -1270,13 +1270,13 @@ function MainApp() {
                 >
                   <Sparkles size={17} color="#090909" strokeWidth={2.5} />
                   <Text style={styles.centerAutoFixText}>
-                    Auto Fix to 100% ({totalPct > 100 ? `+${totalPct - 100}% over` : `${100 - totalPct}% left`})
+                    Auto-Balance to 100% ({totalPct > 100 ? `+${totalPct - 100}% over` : `${100 - totalPct}% unallocated`})
                   </Text>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.centerBalancedIndicator}>
                   <Check size={16} color="#FFFFFF" strokeWidth={2.8} />
-                  <Text style={styles.centerBalancedText}>✓ 100% Balanced ({formatCurr(totalSetupInc)})</Text>
+                  <Text style={styles.centerBalancedText}>✓ 100% Fully Allocated ({formatCurr(totalSetupInc)})</Text>
                 </View>
               )}
             </View>
@@ -1356,7 +1356,7 @@ function MainApp() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
             {/* Title Only (No step label or subtext) */}
             <View style={{ paddingTop: 6, marginBottom: 16 }}>
-              <Text style={styles.onboardingStepTitle}>Customize Expense Categories</Text>
+              <Text style={styles.onboardingStepTitle}>Customize Category Allocations</Text>
             </View>
 
             {/* Segmented Pillar Selector */}
@@ -1388,7 +1388,7 @@ function MainApp() {
             <View style={styles.pillarAllocationSummaryCard}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <Text style={styles.pillarSummaryLabel}>
-                  {activeSetupCat.toUpperCase()} ALLOCATED
+                  {activeSetupCat.toUpperCase()} ALLOCATION
                 </Text>
                 <Text
                   style={[
@@ -1398,10 +1398,10 @@ function MainApp() {
                   ]}
                 >
                   {pillarDiff === 0
-                    ? '✓ 100% Allocated'
+                    ? '✓ 100% Deployed'
                     : pillarDiff > 0
-                    ? `${formatCurr(pillarDiff)} available`
-                    : `Exceeds by ${formatCurr(Math.abs(pillarDiff))}`}
+                    ? `${formatCurr(pillarDiff)} available to allocate`
+                    : `Exceeds cap by ${formatCurr(Math.abs(pillarDiff))}`}
                 </Text>
               </View>
               <View style={styles.pillarProgressBarBg}>
@@ -1417,10 +1417,10 @@ function MainApp() {
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
                 <Text style={{ fontSize: 11, color: '#8A8A8A', fontWeight: '600' }}>
-                  {formatCurr(subTotal)} allocated
+                  {formatCurr(subTotal)} deployed
                 </Text>
                 <Text style={{ fontSize: 11, color: '#8A8A8A', fontWeight: '600' }}>
-                  Limit: {formatCurr(activePillarBudget)}
+                  Pillar Cap: {formatCurr(activePillarBudget)}
                 </Text>
               </View>
             </View>
@@ -1459,7 +1459,7 @@ function MainApp() {
 
               {currentSubList.length === 0 && (
                 <View style={{ padding: 20, alignItems: 'center', backgroundColor: '#141414', borderRadius: 16 }}>
-                  <Text style={{ color: '#8A8A8A', fontSize: 13 }}>No categories yet. Add one below!</Text>
+                  <Text style={{ color: '#8A8A8A', fontSize: 13 }}>No categories configured yet. Tap Add below.</Text>
                 </View>
               )}
             </View>
@@ -1741,7 +1741,7 @@ function MainApp() {
             <View style={styles.homeKeypadContainerCard}>
               {/* Total Balance Pill Overlapping Top Edge (Pushed Higher) */}
               <View style={styles.homeTotalBalancePillBadge}>
-                <Text style={styles.homeTotalBalancePillLabel}>Total Balance: </Text>
+                <Text style={styles.homeTotalBalancePillLabel}>Available Balance: </Text>
                 <Text style={styles.homeTotalBalancePillValue}>
                   {formatCurr(calculations.totalBalance)}
                 </Text>
@@ -1846,9 +1846,9 @@ function MainApp() {
             {/* Top Section: Monthly Budget Card */}
             <View style={[styles.charcoalBudgetCard, { backgroundColor: '#1A1A1E', borderColor: '#28282E', marginBottom: 0, marginTop: 4 }]}>
               <View style={styles.cardHeaderRow}>
-                <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
+                <Text style={styles.cardLabelCharcoal}>MONTHLY ALLOCATION</Text>
                 <View style={styles.budgetPercentPill}>
-                  <Text style={styles.budgetPercentText}>{calculations.percentSpent}% used</Text>
+                  <Text style={styles.budgetPercentText}>{calculations.percentSpent}% utilized</Text>
                 </View>
               </View>
 
@@ -1856,10 +1856,10 @@ function MainApp() {
 
               <View style={styles.budgetMetaRow}>
                 <Text style={styles.budgetMetaText}>
-                  Spent <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalSpent)}</Text>
+                  Outflow <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalSpent)}</Text>
                 </Text>
                 <Text style={styles.budgetMetaText}>
-                  Remaining <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalBalance)}</Text>
+                  Available <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{formatCurr(calculations.totalBalance)}</Text>
                 </Text>
               </View>
 
@@ -1877,7 +1877,7 @@ function MainApp() {
             {/* Bottom Section: Recent Transactions Card (Matching 366px height to Keypad Card) */}
             <View style={[styles.charcoalBudgetCard, { height: 366, backgroundColor: '#151518', borderColor: '#222228', padding: 14, marginBottom: 0 }]}>
               <View style={styles.cardHeaderRow}>
-                <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
+                <Text style={styles.cardLabelCharcoal}>ACTIVITY LEDGER</Text>
                 <TouchableOpacity onPress={() => setCurrentTab('budget')}>
                   <Text style={styles.charcoalCardLink}>View all ({calculations.transactions.length})</Text>
                 </TouchableOpacity>
@@ -1902,7 +1902,7 @@ function MainApp() {
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                             <RenderCategoryIcon iconName={sub.icon} size={12} color="#FFFFFF" bgColor="#222222" />
                             <Text style={{ fontSize: 11.5, fontWeight: 'bold', color: '#FFFFFF' }} numberOfLines={1}>
-                              {sub.name} (Over Limit)
+                              {sub.name} (Cap Exceeded)
                             </Text>
                           </View>
                           <View style={styles.overBadgePill}>
@@ -1917,7 +1917,7 @@ function MainApp() {
                 <View style={{ gap: 8 }}>
                   {calculations.transactions.length === 0 ? (
                     <View style={styles.emptyDarkState}>
-                      <Text style={styles.emptyDarkText}>No transactions recorded for this month</Text>
+                      <Text style={styles.emptyDarkText}>No activity recorded for this billing cycle</Text>
                     </View>
                   ) : (
                     calculations.transactions.slice(0, 10).map((tx) => (
@@ -2022,8 +2022,8 @@ function MainApp() {
             {/* Header */}
             <View style={styles.darkSheetHeader}>
               <View>
-                <Text style={styles.darkSheetHeading}>Categorize Expense</Text>
-                <Text style={styles.darkSheetSubHeading}>Select pillar & subcategory</Text>
+                <Text style={styles.darkSheetHeading}>Record Outflow</Text>
+                <Text style={styles.darkSheetSubHeading}>Allocate to budget pillar and category</Text>
               </View>
               <TouchableOpacity
                 style={styles.darkCloseCircleBtn}
@@ -2070,7 +2070,7 @@ function MainApp() {
 
               {/* Dynamic Subcategories Horizontal Chips */}
               <View style={styles.darkSubcategoryChipsSection}>
-                <Text style={styles.darkSubcategorySectionLabel}>SELECT SUBCATEGORY</Text>
+                <Text style={styles.darkSubcategorySectionLabel}>CATEGORY ALLOCATION</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
                   {curCat?.subcategories.map((sub) => {
                     const isSelected = selectedSubId === sub.id;
@@ -2102,10 +2102,10 @@ function MainApp() {
                   <AlertTriangle size={16} color="#FF6B6B" strokeWidth={2.4} style={{ marginTop: 2 }} />
                   <View style={{ flex: 1, marginLeft: 8 }}>
                     <Text style={styles.darkOverBudgetWarningTitle}>
-                      Budget Exceeded Warning ({projectedPercent}%)
+                      Budget Cap Alert ({projectedPercent}%)
                     </Text>
                     <Text style={styles.darkOverBudgetWarningDesc}>
-                      {curSub?.name} budget is {formatCurr(subLimit)}. This entry exceeds it by {formatCurr(exceedByAmount)} (Total: {formatCurr(projectedSpent)}).
+                      {curSub?.name} cap is {formatCurr(subLimit)}. This entry brings total outflow to {formatCurr(projectedSpent)} (+{formatCurr(exceedByAmount)}).
                     </Text>
                   </View>
                 </View>
@@ -2114,7 +2114,7 @@ function MainApp() {
               {/* Optional Title / Notes input */}
               <View style={styles.darkExpenseInputWrapper}>
                 <TextInput
-                  placeholder="Expense description (optional)"
+                  placeholder="Merchant or description (optional)"
                   placeholderTextColor="#666666"
                   value={expenseTitle}
                   onChangeText={setExpenseTitle}
@@ -2130,7 +2130,7 @@ function MainApp() {
               activeOpacity={0.85}
             >
               <Check size={18} color="#090909" strokeWidth={3} />
-              <Text style={styles.darkSaveExpenseBtnText}>Save Expense</Text>
+              <Text style={styles.darkSaveExpenseBtnText}>Record Outflow</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -2149,27 +2149,27 @@ function MainApp() {
     >
       <View style={styles.darkDashboardArea}>
         <View style={styles.screenHeaderRow}>
-          <TouchableOpacity style={styles.screenBackBtn} onPress={() => setCurrentTab('home')}>
+          <TouchableOpacity style={styles.screenBackBtn} onPress={() => switchTab('home')}>
             <ArrowLeft size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.screenHeaderTitle}>Transactions</Text>
+          <Text style={styles.screenHeaderTitle}>Activity Ledger</Text>
           <TouchableOpacity style={styles.screenAddBtn} onPress={() => setIsAddExpenseOpen(true)}>
             <Plus size={18} color="#090909" strokeWidth={3} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.charcoalBudgetCard}>
-          <Text style={styles.cardLabelCharcoal}>MONTHLY LEDGER</Text>
+          <Text style={styles.cardLabelCharcoal}>CONSOLIDATED OUTFLOW</Text>
           <Text style={styles.budgetTotalLarge}>{formatCurr(calculations.totalSpent)}</Text>
           <Text style={styles.budgetMetaText}>
-            {calculations.transactions.length} total outgoing transactions for {currentMonthData.monthName}
+            {calculations.transactions.length} total recorded outflows for {currentMonthData.monthName}
           </Text>
         </View>
       </View>
 
       <View style={styles.floatingWhiteSheet}>
         <View style={styles.sheetHandleIndicator} />
-        <Text style={styles.whiteSheetTitle}>All Entries ({calculations.transactions.length})</Text>
+        <Text style={styles.whiteSheetTitle}>Transaction History ({calculations.transactions.length})</Text>
 
         <View style={{ gap: 4, marginTop: 8 }}>
           {calculations.transactions.map((tx) => (
@@ -2194,9 +2194,6 @@ function MainApp() {
     </ScrollView>
   );
 
-  // ----------------------------------------------------
-  // 4. BUDGET SCREEN
-  // ----------------------------------------------------
   // ----------------------------------------------------
   // 4. BUDGET SCREEN (Matching uploaded design reference)
   // ----------------------------------------------------
@@ -2526,20 +2523,20 @@ function MainApp() {
           <TouchableOpacity style={styles.screenBackBtn} onPress={() => switchTab('home')}>
             <ArrowLeft size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.screenHeaderTitle}>Analytics</Text>
+          <Text style={styles.screenHeaderTitle}>Analytics & Trends</Text>
           <View style={{ width: 36 }} />
         </View>
 
         <View style={styles.charcoalBudgetCard}>
-          <Text style={styles.cardLabelCharcoal}>SPENDING OVERVIEW</Text>
+          <Text style={styles.cardLabelCharcoal}>OUTFLOW ANALYSIS</Text>
           <Text style={styles.budgetTotalLarge}>{formatCurr(calculations.totalSpent)}</Text>
-          <Text style={styles.budgetMetaText}>{currentMonthData.monthName} Total Outgoing</Text>
+          <Text style={styles.budgetMetaText}>Total consolidated outflow for {currentMonthData.monthName}</Text>
         </View>
       </View>
 
       <View style={styles.floatingGreySheet}>
         <View style={styles.sheetHandleIndicator} />
-        <Text style={styles.greySheetTitle}>Monthly Historical Trend</Text>
+        <Text style={styles.greySheetTitle}>Historical Outflow Trend</Text>
 
         <View style={styles.monochromeBarChartContainer}>
           {data.historicalMonthlyData.map((item, idx) => {
@@ -2564,11 +2561,11 @@ function MainApp() {
           })}
         </View>
 
-        <Text style={[styles.greySheetTitle, { marginTop: 20 }]}>Pillar Breakdown</Text>
+        <Text style={[styles.greySheetTitle, { marginTop: 20 }]}>Pillar Capital Distribution</Text>
         <View style={{ gap: 12, marginTop: 10 }}>
           <View style={styles.greyBreakdownRow}>
             <View style={styles.greyBreakdownHeader}>
-              <Text style={styles.greyBreakdownName}>Needs</Text>
+              <Text style={styles.greyBreakdownName}>Needs (Essentials)</Text>
               <Text style={styles.greyBreakdownVal}>{formatCurr(calculations.needs.spent)} ({calculations.needs.percentSpent}%)</Text>
             </View>
             <View style={styles.progressTrackLight}>
@@ -2578,7 +2575,7 @@ function MainApp() {
 
           <View style={styles.greyBreakdownRow}>
             <View style={styles.greyBreakdownHeader}>
-              <Text style={styles.greyBreakdownName}>Wants</Text>
+              <Text style={styles.greyBreakdownName}>Wants (Discretionary)</Text>
               <Text style={styles.greyBreakdownVal}>{formatCurr(calculations.wants.spent)} ({calculations.wants.percentSpent}%)</Text>
             </View>
             <View style={styles.progressTrackLight}>
@@ -2588,7 +2585,7 @@ function MainApp() {
 
           <View style={styles.greyBreakdownRow}>
             <View style={styles.greyBreakdownHeader}>
-              <Text style={styles.greyBreakdownName}>Savings</Text>
+              <Text style={styles.greyBreakdownName}>Savings & Investments</Text>
               <Text style={styles.greyBreakdownVal}>{formatCurr(calculations.savings.spent)} ({calculations.savings.percentSpent}%)</Text>
             </View>
             <View style={styles.progressTrackLight}>
@@ -2614,13 +2611,13 @@ function MainApp() {
           <TouchableOpacity style={styles.screenBackBtn} onPress={() => switchTab('home')}>
             <ArrowLeft size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.screenHeaderTitle}>Settings & Setup</Text>
+          <Text style={styles.screenHeaderTitle}>Settings & Preferences</Text>
           <View style={{ width: 36 }} />
         </View>
 
         {/* Configuration Charcoal Card */}
         <View style={[styles.charcoalBudgetCard, { marginTop: 14 }]}>
-          <Text style={styles.cardLabelCharcoal}>CONFIGURATION</Text>
+          <Text style={styles.cardLabelCharcoal}>ALLOCATION & CONFIGURATION</Text>
 
           <View style={{ gap: 10, marginTop: 12 }}>
             {/* Adjust 50/30/20 Allocation */}
@@ -2630,7 +2627,7 @@ function MainApp() {
               activeOpacity={0.75}
             >
               <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.darkActionCardTitle}>Adjust 50/30/20 Percentages</Text>
+                <Text style={styles.darkActionCardTitle}>Target Allocation Strategy</Text>
                 <Text style={styles.darkActionCardSub}>Needs {customPercent.needs}% · Wants {customPercent.wants}% · Savings {customPercent.savings}%</Text>
               </View>
               <ChevronRight size={16} color="#8A8A8A" />
@@ -2648,8 +2645,8 @@ function MainApp() {
               activeOpacity={0.75}
             >
               <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.darkActionCardTitle}>Start Over / Setup Wizard</Text>
-                <Text style={styles.darkActionCardSub}>Set salary, allocation %, and restart from ₹0</Text>
+                <Text style={styles.darkActionCardTitle}>Reconfigure Profile & Income</Text>
+                <Text style={styles.darkActionCardSub}>Update net salary, target allocation %, and baseline defaults</Text>
               </View>
               <ChevronRight size={16} color="#8A8A8A" />
             </TouchableOpacity>
@@ -2666,8 +2663,8 @@ function MainApp() {
               activeOpacity={0.75}
             >
               <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.darkActionCardTitle}>Reset All Data to Zero</Text>
-                <Text style={styles.darkActionCardSub}>Clear all transactions and return to initial setup</Text>
+                <Text style={styles.darkActionCardTitle}>Reset Profile to Default</Text>
+                <Text style={styles.darkActionCardSub}>Clear recorded transactions and restore default baseline</Text>
               </View>
               <ChevronRight size={16} color="#8A8A8A" />
             </TouchableOpacity>
