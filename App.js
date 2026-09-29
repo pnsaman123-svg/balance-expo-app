@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet,
-  Text,
+  Text as RNText,
   View,
   ScrollView,
   TouchableOpacity,
-  TextInput,
+  TextInput as RNTextInput,
   Modal,
   StatusBar,
   Dimensions,
@@ -28,6 +28,49 @@ import {
   Poppins_800ExtraBold,
   Poppins_900Black,
 } from '@expo-google-fonts/poppins';
+
+// Helper to resolve exact Poppins font variant for crisp cross-platform rendering
+const getPoppinsFont = (style) => {
+  const flat = StyleSheet.flatten(style) || {};
+  const weight = String(flat.fontWeight || '');
+  if (weight === '900' || weight === 'black') return 'Poppins_900Black';
+  if (weight === '800' || weight === 'extra-bold') return 'Poppins_800ExtraBold';
+  if (weight === '700' || weight === 'bold') return 'Poppins_700Bold';
+  if (weight === '600' || weight === 'semibold') return 'Poppins_600SemiBold';
+  if (weight === '500' || weight === 'medium') return 'Poppins_500Medium';
+  if (weight === '300' || weight === 'light') return 'Poppins_300Light';
+  return 'Poppins_400Regular';
+};
+
+const Text = React.forwardRef((props, ref) => {
+  const fontFam = getPoppinsFont(props.style);
+  return (
+    <RNText
+      {...props}
+      ref={ref}
+      style={[
+        { fontFamily: fontFam },
+        props.style,
+        Platform.OS === 'android' ? { fontWeight: undefined } : null,
+      ]}
+    />
+  );
+});
+
+const TextInput = React.forwardRef((props, ref) => {
+  const fontFam = getPoppinsFont(props.style);
+  return (
+    <RNTextInput
+      {...props}
+      ref={ref}
+      style={[
+        { fontFamily: fontFam },
+        props.style,
+        Platform.OS === 'android' ? { fontWeight: undefined } : null,
+      ]}
+    />
+  );
+});
 import {
   Home,
   Receipt,
