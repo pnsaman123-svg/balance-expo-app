@@ -1591,164 +1591,236 @@ function MainApp() {
   // ----------------------------------------------------
   // 1. DASHBOARD: SLIDE 1 (BIG NUMPAD & CENTERED REMAINING PILL) | SLIDE 2 (MONTHLY BUDGET & RECENT TX)
   // ----------------------------------------------------
-  const renderHome = () => (
-    <View style={{ flex: 1, backgroundColor: '#090909' }}>
-      {/* Top Header Row: Month Selector | Avatar (Clean Minimal Header) */}
-      <View style={[styles.dashboardTopRow, { marginHorizontal: 20, marginTop: 4, marginBottom: 8 }]}>
-        <TouchableOpacity
-          style={styles.monthSelectPill}
-          onPress={() => setIsMonthPickerOpen(true)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.monthSelectText}>{currentMonthData.monthName}</Text>
-          <ChevronDown size={14} color="#D6D6D6" style={{ marginLeft: 4 }} />
-        </TouchableOpacity>
+  const getAmountSplit = (rawStr, currencySym) => {
+    const s = rawStr || '0';
+    if (s.includes('.')) {
+      const parts = s.split('.');
+      const intNum = parseFloat(parts[0] || '0');
+      const decPart = parts[1] !== undefined ? `.${parts[1]}` : '.00';
+      return {
+        intStr: `${currencySym}${intNum.toLocaleString('en-IN')}`,
+        decStr: decPart,
+      };
+    } else {
+      const intNum = parseFloat(s || '0');
+      return {
+        intStr: `${currencySym}${intNum.toLocaleString('en-IN')}`,
+        decStr: '.00',
+      };
+    }
+  };
 
-        <View style={styles.dashboardAvatar}>
-          <Text style={styles.dashboardAvatarText}>{(data?.userName || 'U').charAt(0).toUpperCase()}</Text>
+  const renderHome = () => {
+    const currencyIsoCode =
+      data.currency === '₹'
+        ? 'INR'
+        : data.currency === '$'
+        ? 'USD'
+        : data.currency === '€'
+        ? 'EUR'
+        : data.currency === '£'
+        ? 'GBP'
+        : 'USD';
+    const splitAmount = getAmountSplit(homeAmountStr, data.currency);
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#090909' }}>
+        {/* Top Header Row: Month Selector | Avatar */}
+        <View style={[styles.dashboardTopRow, { marginHorizontal: 20, marginTop: 4, marginBottom: 6 }]}>
+          <TouchableOpacity
+            style={styles.monthSelectPill}
+            onPress={() => setIsMonthPickerOpen(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.monthSelectText}>{currentMonthData.monthName}</Text>
+            <ChevronDown size={14} color="#D6D6D6" style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
+
+          <View style={styles.dashboardAvatar}>
+            <Text style={styles.dashboardAvatarText}>{(data?.userName || 'U').charAt(0).toUpperCase()}</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Horizontal Swipeable Container */}
-      <ScrollView
-        ref={homeScrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => {
-          const page = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-          setHomeSlide(page);
-        }}
-        style={{ flex: 1 }}
-      >
-        {/* SLIDE 0: KEYPAD EXPENSE ENTRY (Keypad anchored at bottom above nav bar) */}
-        <View
-          style={{
-            width: SCREEN_WIDTH,
-            paddingHorizontal: 20,
-            flex: 1,
-            paddingBottom: Math.max(20, insets.bottom + 85),
+        {/* Horizontal Swipeable Container */}
+        <ScrollView
+          ref={homeScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => {
+            const page = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+            setHomeSlide(page);
           }}
+          style={{ flex: 1 }}
         >
-          {/* Top Section (flex: 1 centered) */}
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            {/* Remaining Balance Pill in Center */}
-            <View style={styles.centerBalancePillWrapper}>
-              <View style={styles.centerBalancePill}>
-                <View style={styles.centerBalanceDot} />
-                <Text style={styles.centerBalancePillText}>
-                  {formatCurr(calculations.totalBalance)} Remaining
+          {/* SLIDE 0: KEYPAD EXPENSE ENTRY */}
+          <View
+            style={{
+              width: SCREEN_WIDTH,
+              paddingHorizontal: 16,
+              flex: 1,
+              justifyContent: 'space-between',
+              paddingBottom: Math.max(16, insets.bottom + 85),
+            }}
+          >
+            {/* Top Hero Amount Row: Currency Code (USD/INR) on Left + Big Amount on Right */}
+            <View style={styles.homeTopAmountRow}>
+              <Text style={styles.homeCurrencyIsoCode}>{currencyIsoCode}</Text>
+
+              <View style={styles.homeAmountRightSide}>
+                <View style={styles.homeAmountSplitTextRow}>
+                  <Text style={styles.homeAmountBigInteger} numberOfLines={1}>
+                    {splitAmount.intStr}
+                  </Text>
+                  <Text style={styles.homeAmountSmallFraction}>{splitAmount.decStr}</Text>
+                </View>
+
+                {homeAmountStr !== '0' && (
+                  <TouchableOpacity
+                    onPress={() => handleHomeKeypadPress('backspace')}
+                    onLongPress={() => setHomeAmountStr('0')}
+                    style={styles.homeInlineDeleteBtn}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  >
+                    <Delete size={18} color="#8E8E93" strokeWidth={2.2} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* User Profile / Account Banner Card */}
+            <TouchableOpacity
+              style={styles.homeUserCard}
+              activeOpacity={0.85}
+              onPress={() => {
+                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+                setHomeSlide(1);
+              }}
+            >
+              <View style={styles.homeUserCardLeft}>
+                <Text style={styles.homeUserNameTitle}>
+                  {data?.userName || 'Samantha Jones'}
+                </Text>
+                <Text style={styles.homeUserSubtitle}>
+                  {calculations.transactions.length > 0
+                    ? `${calculations.transactions.length} transactions · Active`
+                    : '2766 •••• ••••'}
                 </Text>
               </View>
-            </View>
+              <View style={styles.homeUserCardArrowPill}>
+                <ChevronRight size={18} color="#FFFFFF" strokeWidth={2.4} />
+              </View>
+            </TouchableOpacity>
 
-            {/* Big Amount Display */}
-            <View style={[styles.homeAmountDisplaySection, { marginTop: 16, marginBottom: 8 }]}>
-              <Text style={styles.homeAmountCurrency}>{data.currency}</Text>
-              <Text style={styles.homeAmountDigits} numberOfLines={1}>
-                {parseFloat(homeAmountStr || '0').toLocaleString('en-IN')}
-              </Text>
+            {/* Keypad Container Card with Overlapping Total Balance Pill */}
+            <View style={styles.homeKeypadContainerCard}>
+              {/* Total Balance Pill Overlapping Top Edge */}
+              <View style={styles.homeTotalBalancePillBadge}>
+                <Text style={styles.homeTotalBalancePillLabel}>Total Balance: </Text>
+                <Text style={styles.homeTotalBalancePillValue}>
+                  {formatCurr(calculations.totalBalance)}
+                </Text>
+              </View>
+
+              {/* 4x3 Grid of Key Tiles */}
+              <View style={styles.homeKeyTilesGrid}>
+                {/* Row 1 */}
+                <View style={styles.homeKeyTileRow}>
+                  {['1', '2', '3'].map((k) => (
+                    <TouchableOpacity
+                      key={k}
+                      style={styles.homeKeyTileBtn}
+                      onPress={() => handleHomeKeypadPress(k)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.homeKeyTileNum}>{k}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Row 2 */}
+                <View style={styles.homeKeyTileRow}>
+                  {['4', '5', '6'].map((k) => (
+                    <TouchableOpacity
+                      key={k}
+                      style={styles.homeKeyTileBtn}
+                      onPress={() => handleHomeKeypadPress(k)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.homeKeyTileNum}>{k}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Row 3 */}
+                <View style={styles.homeKeyTileRow}>
+                  {['7', '8', '9'].map((k) => (
+                    <TouchableOpacity
+                      key={k}
+                      style={styles.homeKeyTileBtn}
+                      onPress={() => handleHomeKeypadPress(k)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.homeKeyTileNum}>{k}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Row 4: . | 0 | Action (Tick / Delete) */}
+                <View style={styles.homeKeyTileRow}>
+                  <TouchableOpacity
+                    style={styles.homeKeyTileBtn}
+                    onPress={() => handleHomeKeypadPress('.')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.homeKeyTileNum}>.</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.homeKeyTileBtn}
+                    onPress={() => handleHomeKeypadPress('0')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.homeKeyTileNum}>0</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.homeKeyTileBtn,
+                      parseFloat(homeAmountStr || '0') > 0 ? styles.homeKeyTileBtnActive : styles.homeKeyTileBtnIdle,
+                    ]}
+                    onPress={() => {
+                      if (parseFloat(homeAmountStr || '0') > 0) {
+                        handleQuickAddExpense();
+                      } else {
+                        handleHomeKeypadPress('backspace');
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    {parseFloat(homeAmountStr || '0') > 0 ? (
+                      <Check size={26} color="#000000" strokeWidth={3} />
+                    ) : (
+                      <Delete size={22} color="#71717A" strokeWidth={2.2} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </View>
 
-          {/* Spacer corresponding to fixed dots */}
-          <View style={{ height: 26 }} />
-
-          {/* Bottom Section: Fixed Height 325 Keypad */}
-          <View style={{ height: 325, justifyContent: 'center' }}>
-            <View style={styles.calcKeypadWrapperFilled}>
-              {/* Row 1 */}
-              <View style={styles.calcKeypadRow}>
-                {['1', '2', '3'].map((k) => (
-                  <TouchableOpacity
-                    key={k}
-                    style={styles.calcKeypadBtnFilled}
-                    onPress={() => handleHomeKeypadPress(k)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.calcKeypadTextFilled}>{k}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Row 2 */}
-              <View style={styles.calcKeypadRow}>
-                {['4', '5', '6'].map((k) => (
-                  <TouchableOpacity
-                    key={k}
-                    style={styles.calcKeypadBtnFilled}
-                    onPress={() => handleHomeKeypadPress(k)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.calcKeypadTextFilled}>{k}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Row 3 */}
-              <View style={styles.calcKeypadRow}>
-                {['7', '8', '9'].map((k) => (
-                  <TouchableOpacity
-                    key={k}
-                    style={styles.calcKeypadBtnFilled}
-                    onPress={() => handleHomeKeypadPress(k)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.calcKeypadTextFilled}>{k}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Row 4: Backspace | 0 | Tick to Record & Select Category */}
-              <View style={styles.calcKeypadRow}>
-                <TouchableOpacity
-                  style={styles.calcKeypadBtnFilled}
-                  onPress={() => handleHomeKeypadPress('backspace')}
-                  activeOpacity={0.7}
-                >
-                  <Delete size={24} color="#FFFFFF" strokeWidth={2.4} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.calcKeypadBtnFilled}
-                  onPress={() => handleHomeKeypadPress('0')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.calcKeypadTextFilled}>0</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.calcKeypadBtnFilled,
-                    parseFloat(homeAmountStr || '0') > 0 ? styles.calcKeypadBtnTickActive : styles.calcKeypadBtnTickDisabled,
-                  ]}
-                  onPress={handleQuickAddExpense}
-                  disabled={parseFloat(homeAmountStr || '0') <= 0}
-                  activeOpacity={0.8}
-                >
-                  <Check
-                    size={26}
-                    color={parseFloat(homeAmountStr || '0') > 0 ? '#090909' : '#555555'}
-                    strokeWidth={3}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* SLIDE 1: OVERVIEW (Monthly Budget & Recent Transactions) */}
-        <View
-          style={{
-            width: SCREEN_WIDTH,
-            paddingHorizontal: 20,
-            flex: 1,
-            paddingBottom: Math.max(20, insets.bottom + 85),
-          }}
-        >
-          {/* Top Section (flex: 1 centered) */}
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <View style={[styles.charcoalBudgetCard, { marginBottom: 0 }]}>
+          {/* SLIDE 1: OVERVIEW (Monthly Budget & Recent Transactions) */}
+          <View
+            style={{
+              width: SCREEN_WIDTH,
+              paddingHorizontal: 16,
+              flex: 1,
+              justifyContent: 'space-between',
+              paddingBottom: Math.max(16, insets.bottom + 85),
+            }}
+          >
+            {/* Top Section: Monthly Budget Card */}
+            <View style={[styles.charcoalBudgetCard, { backgroundColor: '#1A1A1E', borderColor: '#28282E', marginBottom: 0, marginTop: 4 }]}>
               <View style={styles.cardHeaderRow}>
                 <Text style={styles.cardLabelCharcoal}>MONTHLY BUDGET</Text>
                 <View style={styles.budgetPercentPill}>
@@ -1777,14 +1849,9 @@ function MainApp() {
                 />
               </View>
             </View>
-          </View>
 
-          {/* Spacer corresponding to fixed dots */}
-          <View style={{ height: 26 }} />
-
-          {/* Bottom Section: Fixed Height 325 Recent Transactions Card */}
-          <View style={{ height: 325 }}>
-            <View style={[styles.charcoalBudgetCard, { height: 325, padding: 14, marginBottom: 0 }]}>
+            {/* Bottom Section: Recent Transactions Card */}
+            <View style={[styles.charcoalBudgetCard, { height: 320, backgroundColor: '#151518', borderColor: '#222228', padding: 14, marginBottom: 0 }]}>
               <View style={styles.cardHeaderRow}>
                 <Text style={styles.cardLabelCharcoal}>RECENT TRANSACTIONS</Text>
                 <TouchableOpacity onPress={() => setCurrentTab('budget')}>
@@ -1832,11 +1899,11 @@ function MainApp() {
                     calculations.transactions.slice(0, 10).map((tx) => (
                       <TouchableOpacity
                         key={tx.id}
-                        style={styles.darkTxCard}
+                        style={[styles.darkTxCard, { backgroundColor: '#1E1E24', borderColor: '#2A2A32' }]}
                         onPress={() => setEditingTransaction(tx)}
                         activeOpacity={0.7}
                       >
-                        <RenderCategoryIcon iconName={tx.icon} size={15} color="#FFFFFF" bgColor="#222222" />
+                        <RenderCategoryIcon iconName={tx.icon} size={15} color="#FFFFFF" bgColor="#282830" />
                         <View style={styles.darkTxDetails}>
                           <Text style={styles.darkTxTitle} numberOfLines={1}>{tx.title}</Text>
                           <Text style={styles.darkTxSub} numberOfLines={1}>
@@ -1851,44 +1918,44 @@ function MainApp() {
               </ScrollView>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/* 100% FIXED CAROUSEL DOTS - Sits static right above the 325px bottom section and NEVER shifts during swipe! */}
-      <View
-        pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          bottom: Math.max(20, insets.bottom + 85) + 325,
-          left: 0,
-          right: 0,
-          height: 26,
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10,
-        }}
-      >
-        <View style={styles.homeCarouselDotsWrapper}>
-          <TouchableOpacity
-            onPress={() => {
-              setHomeSlide(0);
-              homeScrollRef.current?.scrollTo({ x: 0, animated: true });
-            }}
-            style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
-            activeOpacity={0.8}
-          />
-          <TouchableOpacity
-            onPress={() => {
-              setHomeSlide(1);
-              homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
-            }}
-            style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
-            activeOpacity={0.8}
-          />
+        {/* 100% FIXED CAROUSEL DOTS */}
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            bottom: Math.max(16, insets.bottom + 85) + 328,
+            left: 0,
+            right: 0,
+            height: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+          }}
+        >
+          <View style={styles.homeCarouselDotsWrapper}>
+            <TouchableOpacity
+              onPress={() => {
+                setHomeSlide(0);
+                homeScrollRef.current?.scrollTo({ x: 0, animated: true });
+              }}
+              style={[styles.carouselDot, homeSlide === 0 ? styles.carouselDotActive : styles.carouselDotInactive]}
+              activeOpacity={0.8}
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setHomeSlide(1);
+                homeScrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+              }}
+              style={[styles.carouselDot, homeSlide === 1 ? styles.carouselDotActive : styles.carouselDotInactive]}
+              activeOpacity={0.8}
+            />
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   // ----------------------------------------------------
   // 2. DARK SLIDE-IN CATEGORIZE & SAVE EXPENSE BOTTOM SHEET
@@ -5043,108 +5110,164 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3.5,
   },
-  // HOME 2-SLIDE & KEYPAD EXPENSE STYLES
-  homeSlideSegmentPill: {
+  // HOME 2-SLIDE & KEYPAD EXPENSE STYLES (GREY-NEAR-TO-BLACK SLEEK THEME)
+  homeTopAmountRow: {
     flexDirection: 'row',
-    backgroundColor: '#141414',
-    borderWidth: 1,
-    borderColor: '#242424',
-    borderRadius: 20,
-    padding: 3,
-  },
-  homeSlideTabBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 16,
-  },
-  homeSlideTabBtnActive: {
-    backgroundColor: '#FFFFFF',
-  },
-  homeSlideTabText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#8A8A8A',
-  },
-  homeSlideTabTextActive: {
-    color: '#090909',
-  },
-  centerBalancePillWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 6,
-  },
-  centerBalancePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#141414',
-    borderWidth: 1,
-    borderColor: '#242424',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 7,
-  },
-  centerBalanceDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#FFFFFF',
-  },
-  centerBalancePillText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  homeAmountDisplaySection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    marginVertical: 10,
-    gap: 8,
-  },
-  homeAmountCurrency: {
-    color: '#8A8A8A',
-    fontSize: 34,
-    fontWeight: '700',
-  },
-  homeAmountDigits: {
-    color: '#FFFFFF',
-    fontSize: 62,
-    fontWeight: '900',
-    letterSpacing: -1.5,
-  },
-  homeCatSelectorRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 4,
+    marginTop: 2,
     marginBottom: 10,
   },
-  homeCatChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: '#141414',
-    borderWidth: 1,
-    borderColor: '#242424',
+  homeCurrencyIsoCode: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#71717A',
+    letterSpacing: 0.5,
   },
-  homeCatChipActive: {
+  homeAmountRightSide: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  homeAmountSplitTextRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  homeAmountBigInteger: {
+    fontSize: 54,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -1,
+  },
+  homeAmountSmallFraction: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#8E8E93',
+    marginLeft: 2,
+    marginBottom: 4,
+  },
+  homeInlineDeleteBtn: {
+    padding: 6,
+    marginBottom: 6,
+    backgroundColor: '#1C1C20',
+    borderRadius: 10,
+  },
+  homeUserCard: {
+    backgroundColor: '#1A1A1E',
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#28282E',
+  },
+  homeUserCardLeft: {
+    gap: 3,
+  },
+  homeUserNameTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  homeUserSubtitle: {
+    fontSize: 12.5,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  homeUserCardArrowPill: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#28282E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#34343C',
+  },
+  homeKeypadContainerCard: {
+    backgroundColor: '#151518',
+    borderRadius: 28,
+    paddingHorizontal: 10,
+    paddingBottom: 12,
+    paddingTop: 24,
+    borderWidth: 1,
+    borderColor: '#222228',
+    position: 'relative',
+  },
+  homeTotalBalancePillBadge: {
+    position: 'absolute',
+    top: -16,
+    alignSelf: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#000000',
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 10,
+  },
+  homeTotalBalancePillLabel: {
+    fontSize: 12.5,
+    fontWeight: '500',
+    color: '#000000',
+  },
+  homeTotalBalancePillValue: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#000000',
+  },
+  homeKeyTilesGrid: {
+    gap: 8,
+    marginTop: 4,
+  },
+  homeKeyTileRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  homeKeyTileBtn: {
+    flex: 1,
+    height: 62,
+    backgroundColor: '#222227',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A30',
+  },
+  homeKeyTileNum: {
+    fontSize: 27,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  homeKeyTileBtnActive: {
     backgroundColor: '#FFFFFF',
     borderColor: '#FFFFFF',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  homeCatChipText: {
-    color: '#8A8A8A',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  homeCatChipTextActive: {
-    color: '#090909',
+  homeKeyTileBtnIdle: {
+    backgroundColor: '#222227',
   },
   homeCarouselDotsWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   carouselDot: {
     height: 6,
