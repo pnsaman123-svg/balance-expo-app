@@ -15,6 +15,7 @@ import {
   UIManager,
   Animated,
   Easing,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -114,6 +115,11 @@ import {
   Minus,
   Percent,
   ArrowRight,
+  Trophy,
+  Play,
+  Pause,
+  ChevronUp,
+  ChevronLeft,
 } from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -413,6 +419,393 @@ function BlinkingCaret({ height = 54, color = '#FFFFFF', width = 3.5 }) {
   );
 }
 
+const SNAKE_GRID_SIZE = 14;
+
+function SnakeGameModal({ visible, onClose, currency = '₹' }) {
+  const insets = useSafeAreaInsets();
+  const BOARD_SIZE = Math.min(SCREEN_WIDTH - 40, 336);
+  const CELL_SIZE = BOARD_SIZE / SNAKE_GRID_SIZE;
+
+  const [snake, setSnake] = useState([
+    { x: 7, y: 7 },
+    { x: 7, y: 8 },
+    { x: 7, y: 9 },
+  ]);
+  const [direction, setDirection] = useState('UP');
+  const [nextDirection, setNextDirection] = useState('UP');
+  const [food, setFood] = useState({ x: 7, y: 3 });
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [gameState, setGameState] = useState('IDLE'); // 'IDLE' | 'PLAYING' | 'PAUSED' | 'GAME_OVER'
+  const [speed, setSpeed] = useState(130);
+
+  // Load High Score on Mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await safeStorage.getItem('@balance_snake_high_score');
+        if (saved) setHighScore(parseInt(saved, 10) || 0);
+      } catch (e) {}
+    })();
+  }, []);
+
+  const getRandomFood = (currentSnake) => {
+    let newFood;
+    while (true) {
+      newFood = {
+        x: Math.floor(Math.random() * SNAKE_GRID_SIZE),
+        y: Math.floor(Math.random() * SNAKE_GRID_SIZE),
+      };
+      const collides = currentSnake.some(
+        (seg) => seg.x === newFood.x && seg.y === newFood.y
+      );
+      if (!collides) break;
+    }
+    return newFood;
+  };
+
+  const startGame = () => {
+    const initSnake = [
+      { x: 7, y: 7 },
+      { x: 7, y: 8 },
+      { x: 7, y: 9 },
+    ];
+    setSnake(initSnake);
+    setDirection('UP');
+    setNextDirection('UP');
+    setFood(getRandomFood(initSnake));
+    setScore(0);
+    setSpeed(130);
+    setGameState('PLAYING');
+  };
+
+  const changeDirection = (newDir) => {
+    if (gameState !== 'PLAYING') return;
+    if (newDir === 'UP' && direction !== 'DOWN') setNextDirection('UP');
+    if (newDir === 'DOWN' && direction !== 'UP') setNextDirection('DOWN');
+    if (newDir === 'LEFT' && direction !== 'RIGHT') setNextDirection('LEFT');
+    if (newDir === 'RIGHT' && direction !== 'LEFT') setNextDirection('RIGHT');
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 8 || Math.abs(gestureState.dy) > 8;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 20) changeDirection('RIGHT');
+          else if (dx < -20) changeDirection('LEFT');
+        } else {
+          if (dy > 20) changeDirection('DOWN');
+          else if (dy < -20) changeDirection('UP');
+        }
+      },
+    })
+  ).current;
+
+  // Game Loop
+  useEffect(() => {
+    if (gameState !== 'PLAYING') return;
+
+    const timer = setInterval(() => {
+      setDirection(nextDirection);
+      setSnake((prevSnake) => {
+        const head = { ...prevSnake[0] };
+        if (nextDirection === 'UP') head.y -= 1;
+        if (nextDirection === 'DOWN') head.y += 1;
+        if (nextDirection === 'LEFT') head.x -= 1;
+        if (nextDirection === 'RIGHT') head.x += 1;
+
+        // Wall collision
+        if (
+          head.x < 0 ||
+          head.x >= SNAKE_GRID_SIZE ||
+          head.y < 0 ||
+          head.y >= SNAKE_GRID_SIZE
+        ) {
+          setGameState('GAME_OVER');
+          return prevSnake;
+        }
+
+        // Self collision
+        if (prevSnake.some((seg) => seg.x === head.x && seg.y === head.y)) {
+          setGameState('GAME_OVER');
+          return prevSnake;
+        }
+
+        const newSnake = [head, ...prevSnake];
+
+        // Food collision
+        if (head.x === food.x && head.y === food.y) {
+          const newScore = score + 10;
+          setScore(newScore);
+          if (newScore > highScore) {
+            setHighScore(newScore);
+            safeStorage.setItem('@balance_snake_high_score', String(newScore));
+          }
+          setFood(getRandomFood(newSnake));
+          if (newScore % 40 === 0 && speed > 70) {
+            setSpeed((s) => Math.max(70, s - 8));
+          }
+        } else {
+          newSnake.pop();
+        }
+
+        return newSnake;
+      });
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [gameState, nextDirection, food, score, speed, highScore]);
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: '#090909', paddingTop: insets.top + 8, paddingBottom: insets.bottom + 12, paddingHorizontal: 20, justifyContent: 'space-between' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#090909" />
+
+        {/* Top Header */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: '#1E1E24', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2A34' }}>
+              <Gamepad2 size={18} color="#FFFFFF" />
+            </View>
+            <View>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }}>BALANCE SNAKE</Text>
+              <Text style={{ fontSize: 10.5, fontWeight: '600', color: '#7E7E86' }}>Secret Easter Egg Edition</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={onClose}
+            style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#18181C', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#282830' }}
+            activeOpacity={0.7}
+          >
+            <X size={18} color="#FFFFFF" strokeWidth={2.4} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Scoreboard Badges */}
+        <View style={{ flexDirection: 'row', gap: 10, marginVertical: 6 }}>
+          <View style={{ flex: 1, backgroundColor: '#131316', borderWidth: 1, borderColor: '#222228', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#8E8E96' }}>SCORE</Text>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: '#FFFFFF' }}>{currency}{score * 100}</Text>
+          </View>
+
+          <View style={{ flex: 1, backgroundColor: '#131316', borderWidth: 1, borderColor: '#222228', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Trophy size={13} color="#F59E0B" />
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#8E8E96' }}>BEST</Text>
+            </View>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: '#F59E0B' }}>{currency}{highScore * 100}</Text>
+          </View>
+        </View>
+
+        {/* Game Board Container */}
+        <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 4 }}>
+          <View
+            {...panResponder.panHandlers}
+            style={{
+              width: BOARD_SIZE,
+              height: BOARD_SIZE,
+              backgroundColor: '#121216',
+              borderRadius: 24,
+              borderWidth: 1.5,
+              borderColor: '#24242C',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Grid Pattern Lines */}
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+              {Array.from({ length: SNAKE_GRID_SIZE }).map((_, row) => (
+                <View key={row} style={{ position: 'absolute', top: row * CELL_SIZE, left: 0, right: 0, height: CELL_SIZE, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.02)' }} />
+              ))}
+            </View>
+
+            {/* Food Coin */}
+            <View
+              style={{
+                position: 'absolute',
+                left: food.x * CELL_SIZE + 2,
+                top: food.y * CELL_SIZE + 2,
+                width: CELL_SIZE - 4,
+                height: CELL_SIZE - 4,
+                borderRadius: (CELL_SIZE - 4) / 2,
+                backgroundColor: '#F59E0B',
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: '#F59E0B',
+                shadowOpacity: 0.8,
+                shadowRadius: 6,
+                elevation: 4,
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: '900', color: '#000000' }}>{currency}</Text>
+            </View>
+
+            {/* Snake Segments */}
+            {snake.map((seg, idx) => {
+              const isHead = idx === 0;
+              const opacity = Math.max(0.4, 1 - idx * 0.03);
+              return (
+                <View
+                  key={idx}
+                  style={{
+                    position: 'absolute',
+                    left: seg.x * CELL_SIZE + (isHead ? 1 : 2),
+                    top: seg.y * CELL_SIZE + (isHead ? 1 : 2),
+                    width: CELL_SIZE - (isHead ? 2 : 4),
+                    height: CELL_SIZE - (isHead ? 2 : 4),
+                    borderRadius: isHead ? 6 : 4,
+                    backgroundColor: isHead ? '#FFFFFF' : '#9E9EA8',
+                    opacity,
+                    shadowColor: isHead ? '#FFFFFF' : undefined,
+                    shadowOpacity: isHead ? 0.6 : 0,
+                    shadowRadius: 4,
+                  }}
+                />
+              );
+            })}
+
+            {/* Overlay for IDLE / PAUSED / GAME OVER */}
+            {gameState !== 'PLAYING' && (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor: 'rgba(10, 10, 14, 0.88)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 24,
+                    zIndex: 20,
+                  },
+                ]}
+              >
+                {gameState === 'IDLE' && (
+                  <View style={{ alignItems: 'center', gap: 12 }}>
+                    <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: '#1F1F26', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#32323E' }}>
+                      <Gamepad2 size={26} color="#FFFFFF" />
+                    </View>
+                    <Text style={{ fontSize: 19, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>Ready to Grow?</Text>
+                    <Text style={{ fontSize: 12, color: '#A0A0AA', textAlign: 'center', lineHeight: 17, maxWidth: 220 }}>
+                      Swipe or use the D-pad to collect balance tokens and build your score!
+                    </Text>
+                    <TouchableOpacity
+                      onPress={startGame}
+                      style={{ marginTop: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, shadowColor: '#FFFFFF', shadowOpacity: 0.25, shadowRadius: 8, elevation: 4 }}
+                      activeOpacity={0.85}
+                    >
+                      <Play size={16} color="#090909" fill="#090909" />
+                      <Text style={{ fontSize: 13.5, fontWeight: '900', color: '#090909' }}>START GAME</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {gameState === 'PAUSED' && (
+                  <View style={{ alignItems: 'center', gap: 14 }}>
+                    <Text style={{ fontSize: 20, fontWeight: '900', color: '#FFFFFF' }}>PAUSED</Text>
+                    <TouchableOpacity
+                      onPress={() => setGameState('PLAYING')}
+                      style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 26, paddingVertical: 11, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                      activeOpacity={0.85}
+                    >
+                      <Play size={16} color="#090909" fill="#090909" />
+                      <Text style={{ fontSize: 13, fontWeight: '800', color: '#090909' }}>RESUME</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {gameState === 'GAME_OVER' && (
+                  <View style={{ alignItems: 'center', gap: 10 }}>
+                    <Text style={{ fontSize: 21, fontWeight: '900', color: '#FF7070', letterSpacing: -0.5 }}>GAME OVER</Text>
+                    <Text style={{ fontSize: 13.5, color: '#D6D6D6', fontWeight: '600' }}>
+                      Final Balance: <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{currency}{score * 100}</Text>
+                    </Text>
+                    {score > 0 && score >= highScore && (
+                      <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', borderColor: '#F59E0B', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
+                        <Text style={{ fontSize: 10.5, fontWeight: '900', color: '#F59E0B' }}>★ NEW HIGH SCORE!</Text>
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      onPress={startGame}
+                      style={{ marginTop: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6, shadowColor: '#FFFFFF', shadowOpacity: 0.25, shadowRadius: 8, elevation: 4 }}
+                      activeOpacity={0.85}
+                    >
+                      <RotateCcw size={15} color="#090909" strokeWidth={2.5} />
+                      <Text style={{ fontSize: 13.5, fontWeight: '900', color: '#090909' }}>PLAY AGAIN</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Tactile Minimal D-Pad & Controls */}
+        <View style={{ alignItems: 'center', justifyContent: 'center', paddingBottom: 4 }}>
+          {/* Top D-Pad Button */}
+          <TouchableOpacity
+            onPress={() => changeDirection('UP')}
+            style={{ width: 54, height: 48, borderRadius: 14, backgroundColor: '#18181D', borderWidth: 1, borderColor: '#262630', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}
+            activeOpacity={0.65}
+          >
+            <ChevronUp size={22} color="#FFFFFF" strokeWidth={2.6} />
+          </TouchableOpacity>
+
+          {/* Middle Row: Left | Pause/Play | Right */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => changeDirection('LEFT')}
+              style={{ width: 54, height: 48, borderRadius: 14, backgroundColor: '#18181D', borderWidth: 1, borderColor: '#262630', alignItems: 'center', justifyContent: 'center' }}
+              activeOpacity={0.65}
+            >
+              <ChevronLeft size={22} color="#FFFFFF" strokeWidth={2.6} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                if (gameState === 'PLAYING') setGameState('PAUSED');
+                else if (gameState === 'PAUSED') setGameState('PLAYING');
+                else if (gameState === 'IDLE' || gameState === 'GAME_OVER') startGame();
+              }}
+              style={{ width: 54, height: 48, borderRadius: 14, backgroundColor: '#24242C', borderWidth: 1, borderColor: '#343440', alignItems: 'center', justifyContent: 'center' }}
+              activeOpacity={0.65}
+            >
+              {gameState === 'PLAYING' ? (
+                <Pause size={18} color="#FFFFFF" />
+              ) : (
+                <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => changeDirection('RIGHT')}
+              style={{ width: 54, height: 48, borderRadius: 14, backgroundColor: '#18181D', borderWidth: 1, borderColor: '#262630', alignItems: 'center', justifyContent: 'center' }}
+              activeOpacity={0.65}
+            >
+              <ChevronRight size={22} color="#FFFFFF" strokeWidth={2.6} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom D-Pad Button */}
+          <TouchableOpacity
+            onPress={() => changeDirection('DOWN')}
+            style={{ width: 54, height: 48, borderRadius: 14, backgroundColor: '#18181D', borderWidth: 1, borderColor: '#262630', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}
+            activeOpacity={0.65}
+          >
+            <ChevronDown size={22} color="#FFFFFF" strokeWidth={2.6} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function MainApp() {
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -441,6 +834,26 @@ function MainApp() {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [isSnakeGameOpen, setIsSnakeGameOpen] = useState(false);
+  const [avatarTapCount, setAvatarTapCount] = useState(0);
+  const lastAvatarTapRef = useRef(0);
+
+  const handleAvatarTap = () => {
+    const now = Date.now();
+    if (now - lastAvatarTapRef.current > 1800) {
+      setAvatarTapCount(1);
+    } else {
+      const next = avatarTapCount + 1;
+      if (next >= 5) {
+        setAvatarTapCount(0);
+        setIsSnakeGameOpen(true);
+      } else {
+        setAvatarTapCount(next);
+      }
+    }
+    lastAvatarTapRef.current = now;
+  };
+
   const [expandedCat, setExpandedCat] = useState(null);
   const [expandedPillars, setExpandedPillars] = useState({ needs: false, wants: false, savings: false });
   const [selectedSubDetail, setSelectedSubDetail] = useState(null);
@@ -1780,9 +2193,13 @@ function MainApp() {
             <ChevronDown size={14} color="#D6D6D6" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
 
-          <View style={styles.dashboardAvatar}>
+          <TouchableOpacity
+            style={styles.dashboardAvatar}
+            onPress={handleAvatarTap}
+            activeOpacity={0.7}
+          >
             <Text style={styles.dashboardAvatarText}>{(data?.userName || 'U').charAt(0).toUpperCase()}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Horizontal Swipeable Container */}
@@ -3207,6 +3624,13 @@ function MainApp() {
               </View>
             </View>
           </Modal>
+
+          {/* Secret Easter Egg Snake Mini-Game Modal */}
+          <SnakeGameModal
+            visible={isSnakeGameOpen}
+            onClose={() => setIsSnakeGameOpen(false)}
+            currency={data.currency}
+          />
         </>
       )}
     </View>
