@@ -427,13 +427,13 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
   const GRID_COLS = 16;
-  const boardPadding = 12;
+  const boardPadding = 10;
   const usableWidth = windowWidth - boardPadding * 2;
   const cellSize = Math.floor(usableWidth / GRID_COLS);
   const actualBoardWidth = cellSize * GRID_COLS;
 
-  // Header is ~64px, safe area padding
-  const headerSpace = insets.top + insets.bottom + 84;
+  // Header is ~60px, safe area padding
+  const headerSpace = insets.top + insets.bottom + 80;
   const usableHeight = windowHeight - headerSpace;
   const GRID_ROWS = Math.max(16, Math.floor(usableHeight / cellSize));
   const actualBoardHeight = cellSize * GRID_ROWS;
@@ -452,9 +452,15 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [gameState, setGameState] = useState('IDLE'); // 'IDLE' | 'PLAYING' | 'PAUSED' | 'GAME_OVER'
-  const [speed, setSpeed] = useState(125);
+  const [speed, setSpeed] = useState(120);
 
   const lastTouchRef = useRef({ x: 0, y: 0 });
+  const dirRef = useRef('UP');
+  dirRef.current = direction;
+  const nextDirRef = useRef('UP');
+  nextDirRef.current = nextDirection;
+  const stateRef = useRef('IDLE');
+  stateRef.current = gameState;
 
   // Load High Score on Mount
   useEffect(() => {
@@ -483,26 +489,54 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
     return { x: 2, y: 2 };
   };
 
-  const startGame = () => {
+  const startGame = (initialDir = 'UP') => {
     const initSnake = [
       { x: startX, y: startY },
       { x: startX, y: startY + 1 },
       { x: startX, y: startY + 2 },
     ];
     setSnake(initSnake);
-    setDirection('UP');
-    setNextDirection('UP');
+    setDirection(initialDir);
+    setNextDirection(initialDir);
+    nextDirRef.current = initialDir;
+    dirRef.current = initialDir;
     setFood(getRandomFood(initSnake));
     setScore(0);
-    setSpeed(125);
+    setSpeed(120);
     setGameState('PLAYING');
+    stateRef.current = 'PLAYING';
   };
 
   const changeDirection = (newDir) => {
-    if (newDir === 'UP' && direction !== 'DOWN') setNextDirection('UP');
-    if (newDir === 'DOWN' && direction !== 'UP') setNextDirection('DOWN');
-    if (newDir === 'LEFT' && direction !== 'RIGHT') setNextDirection('LEFT');
-    if (newDir === 'RIGHT' && direction !== 'LEFT') setNextDirection('RIGHT');
+    const curr = dirRef.current;
+    if (newDir === 'UP' && curr !== 'DOWN') {
+      setNextDirection('UP');
+      nextDirRef.current = 'UP';
+    }
+    if (newDir === 'DOWN' && curr !== 'UP') {
+      setNextDirection('DOWN');
+      nextDirRef.current = 'DOWN';
+    }
+    if (newDir === 'LEFT' && curr !== 'RIGHT') {
+      setNextDirection('LEFT');
+      nextDirRef.current = 'LEFT';
+    }
+    if (newDir === 'RIGHT' && curr !== 'LEFT') {
+      setNextDirection('RIGHT');
+      nextDirRef.current = 'RIGHT';
+    }
+  };
+
+  const handleSwipeOrStart = (dir) => {
+    if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
+      startGame(dir);
+    } else if (stateRef.current === 'PAUSED') {
+      setGameState('PLAYING');
+      stateRef.current = 'PLAYING';
+      changeDirection(dir);
+    } else if (stateRef.current === 'PLAYING') {
+      changeDirection(dir);
+    }
   };
 
   const panResponder = useRef(
@@ -518,15 +552,15 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
       onPanResponderMove: (evt) => {
         const dx = evt.nativeEvent.pageX - lastTouchRef.current.x;
         const dy = evt.nativeEvent.pageY - lastTouchRef.current.y;
-        const THRESHOLD = 16;
+        const THRESHOLD = 14;
 
         if (Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD) {
           if (Math.abs(dx) > Math.abs(dy)) {
-            if (dx > 0) changeDirection('RIGHT');
-            else changeDirection('LEFT');
+            if (dx > 0) handleSwipeOrStart('RIGHT');
+            else handleSwipeOrStart('LEFT');
           } else {
-            if (dy > 0) changeDirection('DOWN');
-            else changeDirection('UP');
+            if (dy > 0) handleSwipeOrStart('DOWN');
+            else handleSwipeOrStart('UP');
           }
           lastTouchRef.current = {
             x: evt.nativeEvent.pageX,
@@ -534,15 +568,23 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
           };
         }
       },
-      onPanResponderRelease: (evt, gestureState) => {
+      onPanResponderRelease: (_, gestureState) => {
         const { dx, dy } = gestureState;
-        if (Math.abs(dx) > 12 || Math.abs(dy) > 12) {
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
           if (Math.abs(dx) > Math.abs(dy)) {
-            if (dx > 0) changeDirection('RIGHT');
-            else changeDirection('LEFT');
+            if (dx > 0) handleSwipeOrStart('RIGHT');
+            else handleSwipeOrStart('LEFT');
           } else {
-            if (dy > 0) changeDirection('DOWN');
-            else changeDirection('UP');
+            if (dy > 0) handleSwipeOrStart('DOWN');
+            else handleSwipeOrStart('UP');
+          }
+        } else {
+          // Tap on screen when not playing starts or resumes game
+          if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
+            startGame();
+          } else if (stateRef.current === 'PAUSED') {
+            setGameState('PLAYING');
+            stateRef.current = 'PLAYING';
           }
         }
       },
@@ -554,13 +596,16 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
     if (gameState !== 'PLAYING') return;
 
     const timer = setInterval(() => {
-      setDirection(nextDirection);
+      const currentNextDir = nextDirRef.current;
+      setDirection(currentNextDir);
+      dirRef.current = currentNextDir;
+
       setSnake((prevSnake) => {
         const head = { ...prevSnake[0] };
-        if (nextDirection === 'UP') head.y -= 1;
-        if (nextDirection === 'DOWN') head.y += 1;
-        if (nextDirection === 'LEFT') head.x -= 1;
-        if (nextDirection === 'RIGHT') head.x += 1;
+        if (currentNextDir === 'UP') head.y -= 1;
+        if (currentNextDir === 'DOWN') head.y += 1;
+        if (currentNextDir === 'LEFT') head.x -= 1;
+        if (currentNextDir === 'RIGHT') head.x += 1;
 
         // Wall collision
         if (
@@ -570,12 +615,14 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
           head.y >= GRID_ROWS
         ) {
           setGameState('GAME_OVER');
+          stateRef.current = 'GAME_OVER';
           return prevSnake;
         }
 
         // Self collision
         if (prevSnake.some((seg) => seg.x === head.x && seg.y === head.y)) {
           setGameState('GAME_OVER');
+          stateRef.current = 'GAME_OVER';
           return prevSnake;
         }
 
@@ -590,8 +637,8 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
             safeStorage.setItem('@balance_snake_high_score', String(newScore));
           }
           setFood(getRandomFood(newSnake));
-          if (newScore % 40 === 0 && speed > 65) {
-            setSpeed((s) => Math.max(65, s - 7));
+          if (newScore % 40 === 0 && speed > 60) {
+            setSpeed((s) => Math.max(60, s - 6));
           }
         } else {
           newSnake.pop();
@@ -602,7 +649,7 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
     }, speed);
 
     return () => clearInterval(timer);
-  }, [gameState, nextDirection, food, score, speed, highScore, GRID_COLS, GRID_ROWS]);
+  }, [gameState, food, score, speed, highScore, GRID_COLS, GRID_ROWS]);
 
   if (!visible) return null;
 
@@ -638,7 +685,10 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {gameState === 'PLAYING' && (
               <TouchableOpacity
-                onPress={() => setGameState('PAUSED')}
+                onPress={() => {
+                  setGameState('PAUSED');
+                  stateRef.current = 'PAUSED';
+                }}
                 style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#18181E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#282832' }}
                 activeOpacity={0.7}
               >
@@ -747,7 +797,7 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
               );
             })}
 
-            {/* In-Game Subtle Swipe Hint (Fades out when playing) */}
+            {/* In-Game Subtle Swipe Hint */}
             {gameState === 'PLAYING' && score === 0 && (
               <View style={{ position: 'absolute', bottom: 12, left: 0, right: 0, alignItems: 'center' }} pointerEvents="none">
                 <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: '600', letterSpacing: 0.5 }}>
@@ -759,6 +809,7 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
             {/* Overlays for IDLE / PAUSED / GAME OVER */}
             {gameState !== 'PLAYING' && (
               <View
+                pointerEvents="none"
                 style={[
                   StyleSheet.absoluteFill,
                   {
@@ -777,31 +828,27 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
                     </View>
                     <Text style={{ fontSize: 21, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>Balance Snake</Text>
                     <Text style={{ fontSize: 12.5, color: '#A0A0AA', textAlign: 'center', lineHeight: 18, maxWidth: 240 }}>
-                      Swipe anywhere on the full screen to guide your snake and grow your balance!
+                      Swipe anywhere or tap to start guiding your snake!
                     </Text>
-                    <TouchableOpacity
-                      onPress={startGame}
+                    <View
                       style={{ marginTop: 8, backgroundColor: '#FFFFFF', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8, shadowColor: '#FFFFFF', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 }}
-                      activeOpacity={0.85}
                     >
                       <Play size={16} color="#090909" fill="#090909" />
-                      <Text style={{ fontSize: 14, fontWeight: '900', color: '#090909' }}>SWIPE TO START</Text>
-                    </TouchableOpacity>
+                      <Text style={{ fontSize: 14, fontWeight: '900', color: '#090909' }}>TAP OR SWIPE TO START</Text>
+                    </View>
                   </View>
                 )}
 
                 {gameState === 'PAUSED' && (
                   <View style={{ alignItems: 'center', gap: 14 }}>
                     <Text style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF' }}>PAUSED</Text>
-                    <Text style={{ fontSize: 12.5, color: '#90909A' }}>Swipe to resume or tap below</Text>
-                    <TouchableOpacity
-                      onPress={() => setGameState('PLAYING')}
+                    <Text style={{ fontSize: 12.5, color: '#90909A' }}>Tap or swipe anywhere to resume</Text>
+                    <View
                       style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                      activeOpacity={0.85}
                     >
                       <Play size={16} color="#090909" fill="#090909" />
-                      <Text style={{ fontSize: 13.5, fontWeight: '800', color: '#090909' }}>RESUME</Text>
-                    </TouchableOpacity>
+                      <Text style={{ fontSize: 13.5, fontWeight: '800', color: '#090909' }}>TAP TO RESUME</Text>
+                    </View>
                   </View>
                 )}
 
@@ -816,14 +863,12 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
                         <Text style={{ fontSize: 11, fontWeight: '900', color: '#F59E0B' }}>★ NEW HIGH SCORE!</Text>
                       </View>
                     )}
-                    <TouchableOpacity
-                      onPress={startGame}
+                    <View
                       style={{ marginTop: 8, backgroundColor: '#FFFFFF', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8, shadowColor: '#FFFFFF', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 }}
-                      activeOpacity={0.85}
                     >
                       <RotateCcw size={16} color="#090909" strokeWidth={2.5} />
-                      <Text style={{ fontSize: 14, fontWeight: '900', color: '#090909' }}>PLAY AGAIN</Text>
-                    </TouchableOpacity>
+                      <Text style={{ fontSize: 14, fontWeight: '900', color: '#090909' }}>TAP TO PLAY AGAIN</Text>
+                    </View>
                   </View>
                 )}
               </View>
