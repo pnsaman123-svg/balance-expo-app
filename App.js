@@ -607,19 +607,14 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
         if (currentNextDir === 'LEFT') head.x -= 1;
         if (currentNextDir === 'RIGHT') head.x += 1;
 
-        // Wall collision
-        if (
-          head.x < 0 ||
-          head.x >= GRID_COLS ||
-          head.y < 0 ||
-          head.y >= GRID_ROWS
-        ) {
-          setGameState('GAME_OVER');
-          stateRef.current = 'GAME_OVER';
-          return prevSnake;
-        }
+        // Wrap around borders (teleport from opposite side)
+        if (head.x < 0) head.x = GRID_COLS - 1;
+        else if (head.x >= GRID_COLS) head.x = 0;
 
-        // Self collision
+        if (head.y < 0) head.y = GRID_ROWS - 1;
+        else if (head.y >= GRID_ROWS) head.y = 0;
+
+        // Self collision (only running into own body ends the game)
         if (prevSnake.some((seg) => seg.x === head.x && seg.y === head.y)) {
           setGameState('GAME_OVER');
           stateRef.current = 'GAME_OVER';
