@@ -964,7 +964,15 @@ function Wealth2048GameView({ currency = '₹', onUpdateScore, onGameOver, onGam
   const [score, setScore] = useState(0);
   const [gameState, setGameState] = useState('IDLE'); // 'IDLE' | 'PLAYING' | 'GAME_OVER'
 
+  const gridRef = useRef([
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+  const scoreRef = useRef(0);
   const lastTouchRef = useRef({ x: 0, y: 0 });
+  const hasMovedRef = useRef(false);
   const stateRef = useRef('IDLE');
 
   const getEmptyCells = (g) => {
@@ -996,7 +1004,9 @@ function Wealth2048GameView({ currency = '₹', onUpdateScore, onGameOver, onGam
     ];
     g = spawnRandomTile(g);
     g = spawnRandomTile(g);
+    gridRef.current = g;
     setGrid(g);
+    scoreRef.current = 0;
     setScore(0);
     setGameState('PLAYING');
     stateRef.current = 'PLAYING';
@@ -1042,7 +1052,7 @@ function Wealth2048GameView({ currency = '₹', onUpdateScore, onGameOver, onGam
     if (dir === 'RIGHT') rotations = 2;
     if (dir === 'DOWN') rotations = 1;
 
-    let working = grid.map((r) => [...r]);
+    let working = gridRef.current.map((r) => [...r]);
     for (let i = 0; i < rotations; i++) working = rotateGridClockwise(working);
 
     let totalGained = 0;
@@ -1062,9 +1072,11 @@ function Wealth2048GameView({ currency = '₹', onUpdateScore, onGameOver, onGam
     for (let i = 0; i < (4 - rotations) % 4; i++) finalGrid = rotateGridClockwise(finalGrid);
 
     const withSpawn = spawnRandomTile(finalGrid);
+    gridRef.current = withSpawn;
     setGrid(withSpawn);
 
-    const nextScore = score + totalGained;
+    const nextScore = scoreRef.current + totalGained;
+    scoreRef.current = nextScore;
     setScore(nextScore);
     onUpdateScore(nextScore);
 
@@ -1088,23 +1100,44 @@ function Wealth2048GameView({ currency = '₹', onUpdateScore, onGameOver, onGam
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 10 || Math.abs(gestureState.dy) > 10;
+      },
       onPanResponderGrant: (evt) => {
+        hasMovedRef.current = false;
         lastTouchRef.current = { x: evt.nativeEvent.pageX, y: evt.nativeEvent.pageY };
       },
-      onPanResponderRelease: (_, gestureState) => {
-        const { dx, dy } = gestureState;
-        if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
-          startGame();
-          return;
-        }
-        if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
+      onPanResponderMove: (evt) => {
+        if (stateRef.current !== 'PLAYING' || hasMovedRef.current) return;
+        const dx = evt.nativeEvent.pageX - lastTouchRef.current.x;
+        const dy = evt.nativeEvent.pageY - lastTouchRef.current.y;
+        const THRESHOLD = 20;
+        if (Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD) {
+          hasMovedRef.current = true;
           if (Math.abs(dx) > Math.abs(dy)) {
             if (dx > 0) move('RIGHT');
             else move('LEFT');
           } else {
             if (dy > 0) move('DOWN');
             else move('UP');
+          }
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
+          startGame();
+          return;
+        }
+        if (!hasMovedRef.current) {
+          const { dx, dy } = gestureState;
+          if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
+            if (Math.abs(dx) > Math.abs(dy)) {
+              if (dx > 0) move('RIGHT');
+              else move('LEFT');
+            } else {
+              if (dy > 0) move('DOWN');
+              else move('UP');
+            }
           }
         }
       },
