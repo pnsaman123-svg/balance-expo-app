@@ -121,6 +121,9 @@ import {
   Pause,
   ChevronUp,
   ChevronLeft,
+  Heart,
+  Coins,
+  Layers,
 } from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -420,24 +423,20 @@ function BlinkingCaret({ height = 54, color = '#FFFFFF', width = 3.5 }) {
   );
 }
 
-const SNAKE_GRID_SIZE = 14;
+// ============================================================================
+// SECRET EASTER EGG ARCADE VAULT (4-in-1 MINI-GAMES)
+// ============================================================================
+const ARCADE_GAMES = [
+  { id: 'snake', title: 'Snake', icon: Gamepad2 },
+  { id: 'catch', title: 'Catch', icon: Wallet },
+  { id: '2048', title: '2048', icon: Layers },
+  { id: 'runner', title: 'Runner', icon: TrendingUp },
+];
 
-function SnakeGameModal({ visible, onClose, currency = '₹' }) {
-  const insets = useSafeAreaInsets();
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-
+function SnakeGameView({ currency = '₹', onUpdateScore, onGameOver, isPaused, onGameStart, boardWidth, boardHeight }) {
   const GRID_COLS = 16;
-  const boardPadding = 10;
-  const usableWidth = windowWidth - boardPadding * 2;
-  const cellSize = Math.floor(usableWidth / GRID_COLS);
-  const actualBoardWidth = cellSize * GRID_COLS;
-
-  // Header is ~60px, safe area padding
-  const headerSpace = insets.top + insets.bottom + 80;
-  const usableHeight = windowHeight - headerSpace;
-  const GRID_ROWS = Math.max(16, Math.floor(usableHeight / cellSize));
-  const actualBoardHeight = cellSize * GRID_ROWS;
-
+  const cellSize = Math.floor(boardWidth / GRID_COLS);
+  const GRID_ROWS = Math.max(16, Math.floor(boardHeight / cellSize));
   const startX = Math.floor(GRID_COLS / 2);
   const startY = Math.floor(GRID_ROWS / 2);
 
@@ -447,30 +446,15 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
     { x: startX, y: startY + 2 },
   ]);
   const [direction, setDirection] = useState('UP');
-  const [nextDirection, setNextDirection] = useState('UP');
   const [food, setFood] = useState({ x: startX, y: Math.max(2, startY - 5) });
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
-  const [gameState, setGameState] = useState('IDLE'); // 'IDLE' | 'PLAYING' | 'PAUSED' | 'GAME_OVER'
+  const [gameState, setGameState] = useState('IDLE'); // 'IDLE' | 'PLAYING' | 'GAME_OVER'
   const [speed, setSpeed] = useState(120);
 
   const lastTouchRef = useRef({ x: 0, y: 0 });
   const dirRef = useRef('UP');
-  dirRef.current = direction;
   const nextDirRef = useRef('UP');
-  nextDirRef.current = nextDirection;
   const stateRef = useRef('IDLE');
-  stateRef.current = gameState;
-
-  // Load High Score on Mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const saved = await safeStorage.getItem('@balance_snake_high_score');
-        if (saved) setHighScore(parseInt(saved, 10) || 0);
-      } catch (e) {}
-    })();
-  }, []);
 
   const getRandomFood = (currentSnake) => {
     let newFood;
@@ -480,60 +464,42 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
         x: Math.floor(Math.random() * GRID_COLS),
         y: Math.floor(Math.random() * GRID_ROWS),
       };
-      const collides = currentSnake.some(
-        (seg) => seg.x === newFood.x && seg.y === newFood.y
-      );
-      if (!collides) return newFood;
+      if (!currentSnake.some((s) => s.x === newFood.x && s.y === newFood.y)) return newFood;
       attempts++;
     }
     return { x: 2, y: 2 };
   };
 
   const startGame = (initialDir = 'UP') => {
-    const initSnake = [
+    const init = [
       { x: startX, y: startY },
       { x: startX, y: startY + 1 },
       { x: startX, y: startY + 2 },
     ];
-    setSnake(initSnake);
+    setSnake(init);
     setDirection(initialDir);
-    setNextDirection(initialDir);
-    nextDirRef.current = initialDir;
     dirRef.current = initialDir;
-    setFood(getRandomFood(initSnake));
+    nextDirRef.current = initialDir;
+    setFood(getRandomFood(init));
     setScore(0);
+    onUpdateScore(0);
     setSpeed(120);
     setGameState('PLAYING');
     stateRef.current = 'PLAYING';
+    onGameStart();
   };
 
   const changeDirection = (newDir) => {
     const curr = dirRef.current;
-    if (newDir === 'UP' && curr !== 'DOWN') {
-      setNextDirection('UP');
-      nextDirRef.current = 'UP';
-    }
-    if (newDir === 'DOWN' && curr !== 'UP') {
-      setNextDirection('DOWN');
-      nextDirRef.current = 'DOWN';
-    }
-    if (newDir === 'LEFT' && curr !== 'RIGHT') {
-      setNextDirection('LEFT');
-      nextDirRef.current = 'LEFT';
-    }
-    if (newDir === 'RIGHT' && curr !== 'LEFT') {
-      setNextDirection('RIGHT');
-      nextDirRef.current = 'RIGHT';
-    }
+    if (newDir === 'UP' && curr !== 'DOWN') nextDirRef.current = 'UP';
+    if (newDir === 'DOWN' && curr !== 'UP') nextDirRef.current = 'DOWN';
+    if (newDir === 'LEFT' && curr !== 'RIGHT') nextDirRef.current = 'LEFT';
+    if (newDir === 'RIGHT' && curr !== 'LEFT') nextDirRef.current = 'RIGHT';
   };
 
   const handleSwipeOrStart = (dir) => {
     if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
       startGame(dir);
-    } else if (stateRef.current === 'PAUSED') {
-      setGameState('PLAYING');
-      stateRef.current = 'PLAYING';
-      changeDirection(dir);
     } else if (stateRef.current === 'PLAYING') {
       changeDirection(dir);
     }
@@ -544,17 +510,12 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
-        lastTouchRef.current = {
-          x: evt.nativeEvent.pageX,
-          y: evt.nativeEvent.pageY,
-        };
+        lastTouchRef.current = { x: evt.nativeEvent.pageX, y: evt.nativeEvent.pageY };
       },
       onPanResponderMove: (evt) => {
         const dx = evt.nativeEvent.pageX - lastTouchRef.current.x;
         const dy = evt.nativeEvent.pageY - lastTouchRef.current.y;
-        const THRESHOLD = 14;
-
-        if (Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD) {
+        if (Math.abs(dx) > 14 || Math.abs(dy) > 14) {
           if (Math.abs(dx) > Math.abs(dy)) {
             if (dx > 0) handleSwipeOrStart('RIGHT');
             else handleSwipeOrStart('LEFT');
@@ -562,10 +523,7 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
             if (dy > 0) handleSwipeOrStart('DOWN');
             else handleSwipeOrStart('UP');
           }
-          lastTouchRef.current = {
-            x: evt.nativeEvent.pageX,
-            y: evt.nativeEvent.pageY,
-          };
+          lastTouchRef.current = { x: evt.nativeEvent.pageX, y: evt.nativeEvent.pageY };
         }
       },
       onPanResponderRelease: (_, gestureState) => {
@@ -579,296 +537,989 @@ function SnakeGameModal({ visible, onClose, currency = '₹' }) {
             else handleSwipeOrStart('UP');
           }
         } else {
-          // Tap on screen when not playing starts or resumes game
-          if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
-            startGame();
-          } else if (stateRef.current === 'PAUSED') {
-            setGameState('PLAYING');
-            stateRef.current = 'PLAYING';
+          if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') startGame();
+        }
+      },
+    })
+  ).current;
+
+  // Snake Loop
+  useEffect(() => {
+    if (gameState !== 'PLAYING' || isPaused) return;
+
+    const timer = setInterval(() => {
+      const curNextDir = nextDirRef.current;
+      setDirection(curNextDir);
+      dirRef.current = curNextDir;
+
+      setSnake((prev) => {
+        const head = { ...prev[0] };
+        if (curNextDir === 'UP') head.y -= 1;
+        if (curNextDir === 'DOWN') head.y += 1;
+        if (curNextDir === 'LEFT') head.x -= 1;
+        if (curNextDir === 'RIGHT') head.x += 1;
+
+        // Wrap around borders
+        if (head.x < 0) head.x = GRID_COLS - 1;
+        else if (head.x >= GRID_COLS) head.x = 0;
+        if (head.y < 0) head.y = GRID_ROWS - 1;
+        else if (head.y >= GRID_ROWS) head.y = 0;
+
+        // Self collision
+        if (prev.some((seg) => seg.x === head.x && seg.y === head.y)) {
+          setGameState('GAME_OVER');
+          stateRef.current = 'GAME_OVER';
+          onGameOver(score);
+          return prev;
+        }
+
+        const nextSnake = [head, ...prev];
+        if (head.x === food.x && head.y === food.y) {
+          const newScore = score + 10;
+          setScore(newScore);
+          onUpdateScore(newScore);
+          setFood(getRandomFood(nextSnake));
+          if (newScore % 40 === 0 && speed > 60) setSpeed((s) => Math.max(60, s - 6));
+        } else {
+          nextSnake.pop();
+        }
+        return nextSnake;
+      });
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [gameState, isPaused, food, score, speed, GRID_COLS, GRID_ROWS]);
+
+  return (
+    <View {...panResponder.panHandlers} style={{ width: boardWidth, height: boardHeight, backgroundColor: '#0F0F13', borderRadius: 20, borderWidth: 1.5, borderColor: '#202028', position: 'relative', overflow: 'hidden' }}>
+      {/* Grid Pattern Lines */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        {Array.from({ length: GRID_ROWS }).map((_, r) => (
+          <View key={r} style={{ position: 'absolute', top: r * cellSize, left: 0, right: 0, height: cellSize, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.02)' }} />
+        ))}
+      </View>
+
+      {/* Food Coin */}
+      <View style={{ position: 'absolute', left: food.x * cellSize + 2, top: food.y * cellSize + 2, width: cellSize - 4, height: cellSize - 4, borderRadius: (cellSize - 4) / 2, backgroundColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', shadowColor: '#F59E0B', shadowOpacity: 0.9, shadowRadius: 8, elevation: 5 }}>
+        <Text style={{ fontSize: cellSize * 0.52, fontWeight: '900', color: '#000000' }}>{currency}</Text>
+      </View>
+
+      {/* Snake Segments */}
+      {snake.map((seg, idx) => {
+        const isHead = idx === 0;
+        return (
+          <View
+            key={idx}
+            style={{
+              position: 'absolute',
+              left: seg.x * cellSize + (isHead ? 1 : 2),
+              top: seg.y * cellSize + (isHead ? 1 : 2),
+              width: cellSize - (isHead ? 2 : 4),
+              height: cellSize - (isHead ? 2 : 4),
+              borderRadius: isHead ? 6 : 4,
+              backgroundColor: isHead ? '#FFFFFF' : '#9E9EA8',
+              opacity: Math.max(0.45, 1 - idx * 0.025),
+              shadowColor: isHead ? '#FFFFFF' : undefined,
+              shadowOpacity: isHead ? 0.7 : 0,
+              shadowRadius: 5,
+            }}
+          />
+        );
+      })}
+
+      {/* Overlays */}
+      {gameState === 'IDLE' && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 12, 0.88)', alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+          <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: '#1E1E26', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#343444', marginBottom: 12 }}>
+            <Gamepad2 size={26} color="#FFFFFF" />
+          </View>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>Balance Snake</Text>
+          <Text style={{ fontSize: 12, color: '#A0A0AA', textAlign: 'center', marginTop: 4, maxWidth: 220 }}>Swipe anywhere or tap to start gliding across borders!</Text>
+          <View style={{ marginTop: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Play size={15} color="#090909" fill="#090909" />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#090909' }}>TAP TO START</Text>
+          </View>
+        </View>
+      )}
+
+      {gameState === 'GAME_OVER' && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 12, 0.90)', alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+          <Text style={{ fontSize: 22, fontWeight: '900', color: '#FF6B6B' }}>GAME OVER</Text>
+          <Text style={{ fontSize: 13.5, color: '#D6D6D6', fontWeight: '600', marginTop: 4 }}>
+            Final Balance: <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{currency}{score * 100}</Text>
+          </Text>
+          <View style={{ marginTop: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <RotateCcw size={15} color="#090909" strokeWidth={2.5} />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#090909' }}>PLAY AGAIN</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function CoinCatchGameView({ currency = '₹', onUpdateScore, onGameOver, isPaused, onGameStart, boardWidth, boardHeight }) {
+  const BASKET_WIDTH = 68;
+  const BASKET_HEIGHT = 18;
+  const [basketX, setBasketX] = useState(boardWidth / 2 - BASKET_WIDTH / 2);
+  const [items, setItems] = useState([]);
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [isBullRun, setIsBullRun] = useState(false);
+  const [gameState, setGameState] = useState('IDLE'); // 'IDLE' | 'PLAYING' | 'GAME_OVER'
+
+  const bullRunTimerRef = useRef(null);
+  const stateRef = useRef('IDLE');
+  const basketXRef = useRef(basketX);
+  basketXRef.current = basketX;
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+
+  const startGame = () => {
+    setBasketX(boardWidth / 2 - BASKET_WIDTH / 2);
+    setItems([]);
+    setScore(0);
+    scoreRef.current = 0;
+    setLives(3);
+    livesRef.current = 3;
+    setIsBullRun(false);
+    setGameState('PLAYING');
+    stateRef.current = 'PLAYING';
+    onUpdateScore(0);
+    onGameStart();
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
+          startGame();
+          return;
+        }
+        const touchX = evt.nativeEvent.locationX;
+        setBasketX(Math.max(0, Math.min(boardWidth - BASKET_WIDTH, touchX - BASKET_WIDTH / 2)));
+      },
+      onPanResponderMove: (evt) => {
+        if (stateRef.current !== 'PLAYING') return;
+        const touchX = evt.nativeEvent.locationX;
+        setBasketX(Math.max(0, Math.min(boardWidth - BASKET_WIDTH, touchX - BASKET_WIDTH / 2)));
+      },
+      onPanResponderRelease: () => {
+        if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') startGame();
+      },
+    })
+  ).current;
+
+  // Spawner & Physics loop
+  useEffect(() => {
+    if (gameState !== 'PLAYING' || isPaused) return;
+
+    let frameCount = 0;
+    const interval = setInterval(() => {
+      frameCount++;
+
+      // Spawn item every ~28 frames (~560ms)
+      if (frameCount % 28 === 0) {
+        const rand = Math.random();
+        let type = 'coin'; // 65%
+        let val = 100;
+        let color = '#F59E0B';
+
+        if (rand > 0.88) {
+          type = 'lightning'; // 12% Bull run
+          color = '#10B981';
+        } else if (rand > 0.72) {
+          type = 'gem'; // 16% Big Diamond
+          val = 500;
+          color = '#60A5FA';
+        } else if (rand > 0.50) {
+          type = 'tax'; // 22% Tax/Debt Bomb
+          val = -150;
+          color = '#EF4444';
+        }
+
+        const newItem = {
+          id: Date.now() + Math.random(),
+          type,
+          val,
+          color,
+          x: Math.random() * (boardWidth - 32) + 6,
+          y: -20,
+          speed: Math.random() * 2 + 3.5,
+        };
+        setItems((prev) => [...prev, newItem]);
+      }
+
+      // Move items & check collisions
+      setItems((prevItems) => {
+        const nextItems = [];
+        const curBasketX = basketXRef.current;
+        const basketY = boardHeight - 34;
+
+        for (const item of prevItems) {
+          const newY = item.y + item.speed;
+
+          // Catch collision
+          const isCaught =
+            newY >= basketY - 14 &&
+            newY <= basketY + BASKET_HEIGHT &&
+            item.x + 16 >= curBasketX &&
+            item.x <= curBasketX + BASKET_WIDTH;
+
+          if (isCaught) {
+            if (item.type === 'coin' || item.type === 'gem') {
+              const add = isBullRun ? item.val * 2 : item.val;
+              scoreRef.current += add;
+              setScore(scoreRef.current);
+              onUpdateScore(scoreRef.current);
+            } else if (item.type === 'lightning') {
+              setIsBullRun(true);
+              scoreRef.current += 200;
+              setScore(scoreRef.current);
+              onUpdateScore(scoreRef.current);
+              if (bullRunTimerRef.current) clearTimeout(bullRunTimerRef.current);
+              bullRunTimerRef.current = setTimeout(() => setIsBullRun(false), 5000);
+            } else if (item.type === 'tax') {
+              livesRef.current -= 1;
+              setLives(livesRef.current);
+              scoreRef.current = Math.max(0, scoreRef.current - 150);
+              setScore(scoreRef.current);
+              onUpdateScore(scoreRef.current);
+
+              if (livesRef.current <= 0) {
+                setGameState('GAME_OVER');
+                stateRef.current = 'GAME_OVER';
+                onGameOver(scoreRef.current);
+                return [];
+              }
+            }
+          } else if (newY < boardHeight + 20) {
+            nextItems.push({ ...item, y: newY });
+          }
+        }
+        return nextItems;
+      });
+    }, 20);
+
+    return () => clearInterval(interval);
+  }, [gameState, isPaused, isBullRun, boardWidth, boardHeight]);
+
+  return (
+    <View {...panResponder.panHandlers} style={{ width: boardWidth, height: boardHeight, backgroundColor: isBullRun ? '#0A1410' : '#0F0F13', borderRadius: 20, borderWidth: 1.5, borderColor: isBullRun ? '#10B981' : '#202028', position: 'relative', overflow: 'hidden' }}>
+      {/* Top Lives & Bull Run Indicator */}
+      <View style={{ position: 'absolute', top: 10, left: 12, right: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+        {/* Lives Hearts */}
+        <View style={{ flexDirection: 'row', gap: 4 }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Heart key={i} size={14} color={i < lives ? '#EF4444' : '#404048'} fill={i < lives ? '#EF4444' : 'transparent'} />
+          ))}
+        </View>
+
+        {/* Bull Run Banner */}
+        {isBullRun && (
+          <View style={{ backgroundColor: '#10B981', paddingHorizontal: 10, paddingVertical: 2.5, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Zap size={10} color="#000000" fill="#000000" />
+            <Text style={{ fontSize: 9.5, fontWeight: '900', color: '#000000' }}>2X BULL RUN</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Falling Items */}
+      {items.map((item) => (
+        <View
+          key={item.id}
+          style={{
+            position: 'absolute',
+            left: item.x,
+            top: item.y,
+            width: 26,
+            height: 26,
+            borderRadius: 13,
+            backgroundColor: item.color,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: item.color,
+            shadowOpacity: 0.8,
+            shadowRadius: 6,
+            elevation: 4,
+          }}
+        >
+          {item.type === 'coin' && <Text style={{ fontSize: 11, fontWeight: '900', color: '#000000' }}>{currency}</Text>}
+          {item.type === 'gem' && <Sparkles size={13} color="#FFFFFF" />}
+          {item.type === 'lightning' && <Zap size={13} color="#000000" fill="#000000" />}
+          {item.type === 'tax' && <Text style={{ fontSize: 10, fontWeight: '900', color: '#FFFFFF' }}>%</Text>}
+        </View>
+      ))}
+
+      {/* Vault / Basket */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 14,
+          left: basketX,
+          width: BASKET_WIDTH,
+          height: BASKET_HEIGHT,
+          borderRadius: 9,
+          backgroundColor: '#FFFFFF',
+          borderWidth: 2,
+          borderColor: isBullRun ? '#10B981' : '#E0E0E0',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#FFFFFF',
+          shadowOpacity: 0.4,
+          shadowRadius: 8,
+          elevation: 6,
+        }}
+      >
+        <View style={{ width: BASKET_WIDTH - 12, height: 4, borderRadius: 2, backgroundColor: '#090909' }} />
+      </View>
+
+      {/* Overlays */}
+      {gameState === 'IDLE' && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 12, 0.88)', alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+          <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: '#1E1E26', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#343444', marginBottom: 12 }}>
+            <Wallet size={26} color="#FFFFFF" />
+          </View>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>Coin Catch</Text>
+          <Text style={{ fontSize: 12, color: '#A0A0AA', textAlign: 'center', marginTop: 4, maxWidth: 220 }}>
+            Slide your wallet left & right to catch falling assets and dodge red tax bombs!
+          </Text>
+          <View style={{ marginTop: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Play size={15} color="#090909" fill="#090909" />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#090909' }}>TAP TO CATCH</Text>
+          </View>
+        </View>
+      )}
+
+      {gameState === 'GAME_OVER' && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 12, 0.90)', alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+          <Text style={{ fontSize: 22, fontWeight: '900', color: '#FF6B6B' }}>GAME OVER</Text>
+          <Text style={{ fontSize: 13.5, color: '#D6D6D6', fontWeight: '600', marginTop: 4 }}>
+            Net Wealth Captured: <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{currency}{score}</Text>
+          </Text>
+          <View style={{ marginTop: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <RotateCcw size={15} color="#090909" strokeWidth={2.5} />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#090909' }}>PLAY AGAIN</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function Wealth2048GameView({ currency = '₹', onUpdateScore, onGameOver, onGameStart, boardWidth, boardHeight }) {
+  const GRID_SIZE = 4;
+  const boardSquare = Math.min(boardWidth, boardHeight - 40);
+  const tileSize = (boardSquare - 32) / 4;
+
+  const [grid, setGrid] = useState([
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+  const [score, setScore] = useState(0);
+  const [gameState, setGameState] = useState('IDLE'); // 'IDLE' | 'PLAYING' | 'GAME_OVER'
+
+  const lastTouchRef = useRef({ x: 0, y: 0 });
+  const stateRef = useRef('IDLE');
+
+  const getEmptyCells = (g) => {
+    const empty = [];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        if (g[r][c] === 0) empty.push({ r, c });
+      }
+    }
+    return empty;
+  };
+
+  const spawnRandomTile = (g) => {
+    const empty = getEmptyCells(g);
+    if (empty.length === 0) return g;
+    const { r, c } = empty[Math.floor(Math.random() * empty.length)];
+    const val = Math.random() > 0.15 ? 2 : 4;
+    const next = g.map((row) => [...row]);
+    next[r][c] = val;
+    return next;
+  };
+
+  const startGame = () => {
+    let g = [
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ];
+    g = spawnRandomTile(g);
+    g = spawnRandomTile(g);
+    setGrid(g);
+    setScore(0);
+    setGameState('PLAYING');
+    stateRef.current = 'PLAYING';
+    onUpdateScore(0);
+    onGameStart();
+  };
+
+  const slideAndMergeRow = (row) => {
+    let filtered = row.filter((v) => v !== 0);
+    let gained = 0;
+    for (let i = 0; i < filtered.length - 1; i++) {
+      if (filtered[i] === filtered[i + 1]) {
+        filtered[i] *= 2;
+        gained += filtered[i];
+        filtered[i + 1] = 0;
+      }
+    }
+    filtered = filtered.filter((v) => v !== 0);
+    while (filtered.length < 4) filtered.push(0);
+    return { row: filtered, gained };
+  };
+
+  const rotateGridClockwise = (g) => {
+    const next = [
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        next[c][3 - r] = g[r][c];
+      }
+    }
+    return next;
+  };
+
+  const move = (dir) => {
+    if (stateRef.current !== 'PLAYING') return;
+
+    let rotations = 0;
+    if (dir === 'UP') rotations = 3;
+    if (dir === 'RIGHT') rotations = 2;
+    if (dir === 'DOWN') rotations = 1;
+
+    let working = grid.map((r) => [...r]);
+    for (let i = 0; i < rotations; i++) working = rotateGridClockwise(working);
+
+    let totalGained = 0;
+    let changed = false;
+    const newGrid = [];
+
+    for (let r = 0; r < 4; r++) {
+      const { row: nextRow, gained } = slideAndMergeRow(working[r]);
+      totalGained += gained;
+      if (nextRow.some((val, idx) => val !== working[r][idx])) changed = true;
+      newGrid.push(nextRow);
+    }
+
+    if (!changed) return;
+
+    let finalGrid = newGrid;
+    for (let i = 0; i < (4 - rotations) % 4; i++) finalGrid = rotateGridClockwise(finalGrid);
+
+    const withSpawn = spawnRandomTile(finalGrid);
+    setGrid(withSpawn);
+
+    const nextScore = score + totalGained;
+    setScore(nextScore);
+    onUpdateScore(nextScore);
+
+    // Check game over
+    if (getEmptyCells(withSpawn).length === 0) {
+      let canMove = false;
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          if (r < 3 && withSpawn[r][c] === withSpawn[r + 1][c]) canMove = true;
+          if (c < 3 && withSpawn[r][c] === withSpawn[r][c + 1]) canMove = true;
+        }
+      }
+      if (!canMove) {
+        setGameState('GAME_OVER');
+        stateRef.current = 'GAME_OVER';
+        onGameOver(nextScore);
+      }
+    }
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        lastTouchRef.current = { x: evt.nativeEvent.pageX, y: evt.nativeEvent.pageY };
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
+          startGame();
+          return;
+        }
+        if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
+          if (Math.abs(dx) > Math.abs(dy)) {
+            if (dx > 0) move('RIGHT');
+            else move('LEFT');
+          } else {
+            if (dy > 0) move('DOWN');
+            else move('UP');
           }
         }
       },
     })
   ).current;
 
-  // Game Loop
+  const getTileStyle = (val) => {
+    if (val === 0) return { bg: '#17171E', text: '#8E8E98', label: '' };
+    if (val === 2) return { bg: '#252530', text: '#FFFFFF', label: `${currency}2` };
+    if (val === 4) return { bg: '#333342', text: '#FFFFFF', label: `${currency}4` };
+    if (val === 8) return { bg: '#2B3A4A', text: '#60A5FA', label: `${currency}8` };
+    if (val === 16) return { bg: '#1E3A5F', text: '#93C5FD', label: `${currency}16` };
+    if (val === 32) return { bg: '#134E4A', text: '#5EEAD4', label: `${currency}32` };
+    if (val === 64) return { bg: '#065F46', text: '#6EE7B7', label: `${currency}64` };
+    if (val === 128) return { bg: '#047857', text: '#A7F3D0', label: `${currency}128` };
+    if (val === 256) return { bg: '#78350F', text: '#FDE68A', label: `${currency}256` };
+    if (val === 512) return { bg: '#92400E', text: '#FCD34D', label: `${currency}512` };
+    if (val === 1024) return { bg: '#B45309', text: '#FFFFFF', label: `${currency}1K` };
+    if (val === 2048) return { bg: '#D97706', text: '#000000', label: `${currency}2K` };
+    if (val === 4096) return { bg: '#6D28D9', text: '#FFFFFF', label: `${currency}4K` };
+    if (val === 8192) return { bg: '#7C3AED', text: '#FFFFFF', label: `${currency}8K` };
+    return { bg: '#BE123C', text: '#FFFFFF', label: `${currency}1Cr` };
+  };
+
+  return (
+    <View {...panResponder.panHandlers} style={{ width: boardWidth, height: boardHeight, backgroundColor: '#0F0F13', borderRadius: 20, borderWidth: 1.5, borderColor: '#202028', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+      {/* 2048 Grid Container */}
+      <View style={{ width: boardSquare, height: boardSquare, backgroundColor: '#131318', borderRadius: 16, padding: 8, gap: 8 }}>
+        {grid.map((row, rIdx) => (
+          <View key={rIdx} style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
+            {row.map((val, cIdx) => {
+              const meta = getTileStyle(val);
+              return (
+                <View
+                  key={cIdx}
+                  style={{
+                    flex: 1,
+                    backgroundColor: meta.bg,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: val > 0 ? 1 : 0,
+                    borderColor: 'rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <Text style={{ fontSize: tileSize * 0.32, fontWeight: '900', color: meta.text }}>{meta.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        ))}
+      </View>
+
+      {/* Overlays */}
+      {gameState === 'IDLE' && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 12, 0.88)', alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+          <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: '#1E1E26', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#343444', marginBottom: 12 }}>
+            <Layers size={26} color="#FFFFFF" />
+          </View>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>2048 Wealth</Text>
+          <Text style={{ fontSize: 12, color: '#A0A0AA', textAlign: 'center', marginTop: 4, maxWidth: 220 }}>
+            Swipe in 4 directions to merge matching wealth tiles up to ₹1 Crore!
+          </Text>
+          <View style={{ marginTop: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Play size={15} color="#090909" fill="#090909" />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#090909' }}>TAP TO PLAY</Text>
+          </View>
+        </View>
+      )}
+
+      {gameState === 'GAME_OVER' && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 12, 0.90)', alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+          <Text style={{ fontSize: 22, fontWeight: '900', color: '#FF6B6B' }}>NO MORE MOVES</Text>
+          <Text style={{ fontSize: 13.5, color: '#D6D6D6', fontWeight: '600', marginTop: 4 }}>
+            Net Wealth Score: <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{currency}{score}</Text>
+          </Text>
+          <View style={{ marginTop: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <RotateCcw size={15} color="#090909" strokeWidth={2.5} />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#090909' }}>PLAY AGAIN</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function MarketRunnerGameView({ currency = '₹', onUpdateScore, onGameOver, isPaused, onGameStart, boardWidth, boardHeight }) {
+  const COIN_SIZE = 24;
+  const GAP_HEIGHT = 125;
+  const [coinY, setCoinY] = useState(boardHeight / 2);
+  const [velocity, setVelocity] = useState(0);
+  const [candlesticks, setCandlesticks] = useState([]);
+  const [score, setScore] = useState(0);
+  const [gameState, setGameState] = useState('IDLE'); // 'IDLE' | 'PLAYING' | 'GAME_OVER'
+
+  const stateRef = useRef('IDLE');
+  const coinYRef = useRef(coinY);
+  coinYRef.current = coinY;
+  const velRef = useRef(0);
+  const scoreRef = useRef(0);
+
+  const startGame = () => {
+    setCoinY(boardHeight / 2);
+    coinYRef.current = boardHeight / 2;
+    setVelocity(-4);
+    velRef.current = -4;
+    setCandlesticks([]);
+    setScore(0);
+    scoreRef.current = 0;
+    setGameState('PLAYING');
+    stateRef.current = 'PLAYING';
+    onUpdateScore(0);
+    onGameStart();
+  };
+
+  const jump = () => {
+    if (stateRef.current === 'IDLE' || stateRef.current === 'GAME_OVER') {
+      startGame();
+      return;
+    }
+    velRef.current = -7.2;
+    setVelocity(-7.2);
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => jump(),
+    })
+  ).current;
+
+  // Physics loop
   useEffect(() => {
-    if (gameState !== 'PLAYING') return;
+    if (gameState !== 'PLAYING' || isPaused) return;
 
-    const timer = setInterval(() => {
-      const currentNextDir = nextDirRef.current;
-      setDirection(currentNextDir);
-      dirRef.current = currentNextDir;
+    let frameCount = 0;
+    const interval = setInterval(() => {
+      frameCount++;
 
-      setSnake((prevSnake) => {
-        const head = { ...prevSnake[0] };
-        if (currentNextDir === 'UP') head.y -= 1;
-        if (currentNextDir === 'DOWN') head.y += 1;
-        if (currentNextDir === 'LEFT') head.x -= 1;
-        if (currentNextDir === 'RIGHT') head.x += 1;
+      // Gravity
+      velRef.current += 0.44;
+      const nextCoinY = coinYRef.current + velRef.current;
+      coinYRef.current = nextCoinY;
+      setCoinY(nextCoinY);
 
-        // Wrap around borders (teleport from opposite side)
-        if (head.x < 0) head.x = GRID_COLS - 1;
-        else if (head.x >= GRID_COLS) head.x = 0;
+      // Floor / Ceiling collision
+      if (nextCoinY <= 0 || nextCoinY >= boardHeight - COIN_SIZE) {
+        setGameState('GAME_OVER');
+        stateRef.current = 'GAME_OVER';
+        onGameOver(scoreRef.current);
+        return;
+      }
 
-        if (head.y < 0) head.y = GRID_ROWS - 1;
-        else if (head.y >= GRID_ROWS) head.y = 0;
+      // Spawn candlesticks
+      if (frameCount % 60 === 0) {
+        const topH = Math.random() * (boardHeight - GAP_HEIGHT - 80) + 40;
+        const bottomH = boardHeight - topH - GAP_HEIGHT;
+        setCandlesticks((prev) => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            x: boardWidth,
+            topHeight: topH,
+            bottomHeight: bottomH,
+            passed: false,
+          },
+        ]);
+      }
 
-        // Self collision (only running into own body ends the game)
-        if (prevSnake.some((seg) => seg.x === head.x && seg.y === head.y)) {
-          setGameState('GAME_OVER');
-          stateRef.current = 'GAME_OVER';
-          return prevSnake;
-        }
+      // Move Candlesticks
+      setCandlesticks((prev) => {
+        const nextSticks = [];
+        const coinX = 50;
 
-        const newSnake = [head, ...prevSnake];
+        for (const stick of prev) {
+          const nextX = stick.x - 3.2;
 
-        // Food collision
-        if (head.x === food.x && head.y === food.y) {
-          const newScore = score + 10;
-          setScore(newScore);
-          if (newScore > highScore) {
-            setHighScore(newScore);
-            safeStorage.setItem('@balance_snake_high_score', String(newScore));
+          // Collision check
+          if (nextX <= coinX + COIN_SIZE && nextX + 28 >= coinX) {
+            if (nextCoinY < stick.topHeight || nextCoinY + COIN_SIZE > boardHeight - stick.bottomHeight) {
+              setGameState('GAME_OVER');
+              stateRef.current = 'GAME_OVER';
+              onGameOver(scoreRef.current);
+              return [];
+            }
           }
-          setFood(getRandomFood(newSnake));
-          if (newScore % 40 === 0 && speed > 60) {
-            setSpeed((s) => Math.max(60, s - 6));
-          }
-        } else {
-          newSnake.pop();
-        }
 
-        return newSnake;
+          // Score check
+          let passed = stick.passed;
+          if (!passed && nextX + 28 < coinX) {
+            passed = true;
+            scoreRef.current += 100;
+            setScore(scoreRef.current);
+            onUpdateScore(scoreRef.current);
+          }
+
+          if (nextX > -40) {
+            nextSticks.push({ ...stick, x: nextX, passed });
+          }
+        }
+        return nextSticks;
       });
-    }, speed);
+    }, 20);
 
-    return () => clearInterval(timer);
-  }, [gameState, food, score, speed, highScore, GRID_COLS, GRID_ROWS]);
+    return () => clearInterval(interval);
+  }, [gameState, isPaused, boardWidth, boardHeight]);
+
+  return (
+    <View {...panResponder.panHandlers} style={{ width: boardWidth, height: boardHeight, backgroundColor: '#090E14', borderRadius: 20, borderWidth: 1.5, borderColor: '#1E2C3D', position: 'relative', overflow: 'hidden' }}>
+      {/* Background Chart Grid */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <View key={i} style={{ position: 'absolute', top: (i * boardHeight) / 8, left: 0, right: 0, height: 1, backgroundColor: 'rgba(96,165,250,0.03)' }} />
+        ))}
+      </View>
+
+      {/* Candlestick Obstacles */}
+      {candlesticks.map((stick) => (
+        <React.Fragment key={stick.id}>
+          {/* Top Red Bear Stick */}
+          <View style={{ position: 'absolute', left: stick.x, top: 0, width: 28, height: stick.topHeight, backgroundColor: '#EF4444', borderBottomLeftRadius: 6, borderBottomRightRadius: 6, borderWidth: 1, borderColor: '#DC2626' }}>
+            <View style={{ position: 'absolute', bottom: -12, left: 13, width: 2, height: 12, backgroundColor: '#EF4444' }} />
+          </View>
+
+          {/* Bottom Green Bull Stick */}
+          <View style={{ position: 'absolute', left: stick.x, bottom: 0, width: 28, height: stick.bottomHeight, backgroundColor: '#10B981', borderTopLeftRadius: 6, borderTopRightRadius: 6, borderWidth: 1, borderColor: '#059669' }}>
+            <View style={{ position: 'absolute', top: -12, left: 13, width: 2, height: 12, backgroundColor: '#10B981' }} />
+          </View>
+        </React.Fragment>
+      ))}
+
+      {/* Player Coin */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 50,
+          top: coinY,
+          width: COIN_SIZE,
+          height: COIN_SIZE,
+          borderRadius: COIN_SIZE / 2,
+          backgroundColor: '#F59E0B',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#F59E0B',
+          shadowOpacity: 0.9,
+          shadowRadius: 8,
+          elevation: 6,
+        }}
+      >
+        <Text style={{ fontSize: 11, fontWeight: '900', color: '#000000' }}>{currency}</Text>
+      </View>
+
+      {/* Overlays */}
+      {gameState === 'IDLE' && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 12, 0.88)', alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+          <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: '#1E1E26', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#343444', marginBottom: 12 }}>
+            <TrendingUp size={26} color="#FFFFFF" />
+          </View>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>Market Runner</Text>
+          <Text style={{ fontSize: 12, color: '#A0A0AA', textAlign: 'center', marginTop: 4, maxWidth: 220 }}>
+            Tap anywhere to flap & navigate through market candlestick spikes!
+          </Text>
+          <View style={{ marginTop: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Play size={15} color="#090909" fill="#090909" />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#090909' }}>TAP TO JUMP</Text>
+          </View>
+        </View>
+      )}
+
+      {gameState === 'GAME_OVER' && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 12, 0.90)', alignItems: 'center', justifyContent: 'center', padding: 20 }]}>
+          <Text style={{ fontSize: 22, fontWeight: '900', color: '#FF6B6B' }}>MARKET CRASH</Text>
+          <Text style={{ fontSize: 13.5, color: '#D6D6D6', fontWeight: '600', marginTop: 4 }}>
+            Distance Profit: <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{currency}{score}</Text>
+          </Text>
+          <View style={{ marginTop: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <RotateCcw size={15} color="#090909" strokeWidth={2.5} />
+            <Text style={{ fontSize: 13, fontWeight: '900', color: '#090909' }}>TRY AGAIN</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function SnakeGameModal({ visible, onClose, currency = '₹' }) {
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const [activeGame, setActiveGame] = useState('snake');
+  const [liveScore, setLiveScore] = useState(0);
+  const [highScores, setHighScores] = useState({
+    snake: 0,
+    catch: 0,
+    '2048': 0,
+    runner: 0,
+  });
+  const [isPaused, setIsPaused] = useState(false);
+
+  const boardWidth = windowWidth - 20;
+  const boardHeight = windowHeight - insets.top - insets.bottom - 110;
+
+  // Load High Scores
+  useEffect(() => {
+    (async () => {
+      try {
+        const [snakeHS, catchHS, h2048HS, runnerHS] = await Promise.all([
+          safeStorage.getItem('@balance_snake_high_score'),
+          safeStorage.getItem('@balance_catch_high_score'),
+          safeStorage.getItem('@balance_2048_high_score'),
+          safeStorage.getItem('@balance_runner_high_score'),
+        ]);
+        setHighScores({
+          snake: parseInt(snakeHS, 10) || 0,
+          catch: parseInt(catchHS, 10) || 0,
+          '2048': parseInt(h2048HS, 10) || 0,
+          runner: parseInt(runnerHS, 10) || 0,
+        });
+      } catch (e) {}
+    })();
+  }, [visible]);
+
+  const handleUpdateScore = (s) => {
+    setLiveScore(s);
+    if (s > (highScores[activeGame] || 0)) {
+      setHighScores((prev) => {
+        const updated = { ...prev, [activeGame]: s };
+        safeStorage.setItem(`@balance_${activeGame}_high_score`, String(s));
+        return updated;
+      });
+    }
+  };
+
+  const handleGameOver = (finalScore) => {
+    if (finalScore > (highScores[activeGame] || 0)) {
+      setHighScores((prev) => {
+        const updated = { ...prev, [activeGame]: finalScore };
+        safeStorage.setItem(`@balance_${activeGame}_high_score`, String(finalScore));
+        return updated;
+      });
+    }
+  };
 
   if (!visible) return null;
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: '#090909', paddingTop: insets.top + 6, paddingBottom: insets.bottom + 6, paddingHorizontal: boardPadding, justifyContent: 'space-between' }}>
+      <View style={{ flex: 1, backgroundColor: '#090909', paddingTop: insets.top + 6, paddingBottom: insets.bottom + 6, paddingHorizontal: 10, justifyContent: 'space-between' }}>
         <StatusBar barStyle="light-content" backgroundColor="#090909" />
 
         {/* Top Header Floating HUD */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8, height: 48 }}>
-          {/* Left: Title Badge */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 6, height: 44 }}>
+          {/* Title */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: '#18181E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2A34' }}>
-              <Gamepad2 size={16} color="#FFFFFF" />
+            <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#18181E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2A34' }}>
+              <Gamepad2 size={15} color="#FFFFFF" />
             </View>
-            <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }}>BALANCE SNAKE</Text>
+            <Text style={{ fontSize: 13.5, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }}>ARCADE VAULT</Text>
           </View>
 
-          {/* Center: Score & High Score */}
+          {/* Scores */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ backgroundColor: '#131316', borderWidth: 1, borderColor: '#24242C', borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ fontSize: 9.5, fontWeight: '700', color: '#8E8E96' }}>SCORE</Text>
-              <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFFFFF' }}>{currency}{score * 100}</Text>
+            <View style={{ backgroundColor: '#131316', borderWidth: 1, borderColor: '#24242C', borderRadius: 999, paddingVertical: 3.5, paddingHorizontal: 9, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#8E8E96' }}>SCORE</Text>
+              <Text style={{ fontSize: 12, fontWeight: '900', color: '#FFFFFF' }}>{activeGame === 'snake' ? currency + liveScore * 10 : currency + liveScore}</Text>
             </View>
 
-            <View style={{ backgroundColor: '#131316', borderWidth: 1, borderColor: '#24242C', borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Trophy size={11} color="#F59E0B" />
-              <Text style={{ fontSize: 13, fontWeight: '900', color: '#F59E0B' }}>{currency}{highScore * 100}</Text>
+            <View style={{ backgroundColor: '#131316', borderWidth: 1, borderColor: '#24242C', borderRadius: 999, paddingVertical: 3.5, paddingHorizontal: 9, flexDirection: 'row', alignItems: 'center', gap: 3.5 }}>
+              <Trophy size={10.5} color="#F59E0B" />
+              <Text style={{ fontSize: 12, fontWeight: '900', color: '#F59E0B' }}>
+                {activeGame === 'snake' ? currency + (highScores.snake || 0) * 10 : currency + (highScores[activeGame] || 0)}
+              </Text>
             </View>
           </View>
 
-          {/* Right: Controls (Pause + Close) */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            {gameState === 'PLAYING' && (
-              <TouchableOpacity
-                onPress={() => {
-                  setGameState('PAUSED');
-                  stateRef.current = 'PAUSED';
-                }}
-                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#18181E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#282832' }}
-                activeOpacity={0.7}
-              >
-                <Pause size={14} color="#FFFFFF" />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              onPress={onClose}
-              style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#18181E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#282832' }}
-              activeOpacity={0.7}
-            >
-              <X size={16} color="#FFFFFF" strokeWidth={2.4} />
-            </TouchableOpacity>
-          </View>
+          {/* Close */}
+          <TouchableOpacity
+            onPress={onClose}
+            style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#18181E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#282832' }}
+            activeOpacity={0.7}
+          >
+            <X size={15} color="#FFFFFF" strokeWidth={2.4} />
+          </TouchableOpacity>
         </View>
 
-        {/* Full Screen Game Board Container with PanResponder */}
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <View
-            {...panResponder.panHandlers}
-            style={{
-              width: actualBoardWidth,
-              height: actualBoardHeight,
-              backgroundColor: '#0F0F13',
-              borderRadius: 20,
-              borderWidth: 1.5,
-              borderColor: '#202028',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Grid Pattern Background Lines */}
-            <View style={StyleSheet.absoluteFill} pointerEvents="none">
-              {Array.from({ length: GRID_ROWS }).map((_, row) => (
-                <View
-                  key={row}
-                  style={{
-                    position: 'absolute',
-                    top: row * cellSize,
-                    left: 0,
-                    right: 0,
-                    height: cellSize,
-                    borderBottomWidth: 0.5,
-                    borderBottomColor: 'rgba(255,255,255,0.025)',
-                  }}
-                />
-              ))}
-              {Array.from({ length: GRID_COLS }).map((_, col) => (
-                <View
-                  key={col}
-                  style={{
-                    position: 'absolute',
-                    left: col * cellSize,
-                    top: 0,
-                    bottom: 0,
-                    width: cellSize,
-                    borderRightWidth: 0.5,
-                    borderRightColor: 'rgba(255,255,255,0.025)',
-                  }}
-                />
-              ))}
-            </View>
-
-            {/* Food Coin Token */}
-            <View
-              style={{
-                position: 'absolute',
-                left: food.x * cellSize + 2,
-                top: food.y * cellSize + 2,
-                width: cellSize - 4,
-                height: cellSize - 4,
-                borderRadius: (cellSize - 4) / 2,
-                backgroundColor: '#F59E0B',
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: '#F59E0B',
-                shadowOpacity: 0.9,
-                shadowRadius: 8,
-                elevation: 5,
-              }}
-            >
-              <Text style={{ fontSize: cellSize * 0.52, fontWeight: '900', color: '#000000' }}>{currency}</Text>
-            </View>
-
-            {/* Snake Segments */}
-            {snake.map((seg, idx) => {
-              const isHead = idx === 0;
-              const opacity = Math.max(0.45, 1 - idx * 0.025);
-              return (
-                <View
-                  key={idx}
-                  style={{
-                    position: 'absolute',
-                    left: seg.x * cellSize + (isHead ? 1 : 2),
-                    top: seg.y * cellSize + (isHead ? 1 : 2),
-                    width: cellSize - (isHead ? 2 : 4),
-                    height: cellSize - (isHead ? 2 : 4),
-                    borderRadius: isHead ? 6 : 4,
-                    backgroundColor: isHead ? '#FFFFFF' : '#9E9EA8',
-                    opacity,
-                    shadowColor: isHead ? '#FFFFFF' : undefined,
-                    shadowOpacity: isHead ? 0.7 : 0,
-                    shadowRadius: 5,
-                  }}
-                />
-              );
-            })}
-
-            {/* In-Game Subtle Swipe Hint */}
-            {gameState === 'PLAYING' && score === 0 && (
-              <View style={{ position: 'absolute', bottom: 12, left: 0, right: 0, alignItems: 'center' }} pointerEvents="none">
-                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: '600', letterSpacing: 0.5 }}>
-                  SWIPE ANYWHERE TO TURN
-                </Text>
-              </View>
-            )}
-
-            {/* Overlays for IDLE / PAUSED / GAME OVER */}
-            {gameState !== 'PLAYING' && (
-              <View
-                pointerEvents="none"
-                style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    backgroundColor: 'rgba(9, 9, 12, 0.88)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 24,
-                    zIndex: 30,
-                  },
-                ]}
+        {/* Game Switcher Tabs */}
+        <View style={{ flexDirection: 'row', backgroundColor: '#131317', borderRadius: 14, padding: 3, gap: 4, marginBottom: 8, borderWidth: 1, borderColor: '#22222A' }}>
+          {ARCADE_GAMES.map((g) => {
+            const isSel = activeGame === g.id;
+            const IconComp = g.icon;
+            return (
+              <TouchableOpacity
+                key={g.id}
+                onPress={() => {
+                  setActiveGame(g.id);
+                  setLiveScore(0);
+                  setIsPaused(false);
+                }}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 7, borderRadius: 11, backgroundColor: isSel ? '#FFFFFF' : 'transparent' }}
+                activeOpacity={0.8}
               >
-                {gameState === 'IDLE' && (
-                  <View style={{ alignItems: 'center', gap: 14 }}>
-                    <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#1E1E26', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#343444' }}>
-                      <Gamepad2 size={28} color="#FFFFFF" />
-                    </View>
-                    <Text style={{ fontSize: 21, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>Balance Snake</Text>
-                    <Text style={{ fontSize: 12.5, color: '#A0A0AA', textAlign: 'center', lineHeight: 18, maxWidth: 240 }}>
-                      Swipe anywhere or tap to start guiding your snake!
-                    </Text>
-                    <View
-                      style={{ marginTop: 8, backgroundColor: '#FFFFFF', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8, shadowColor: '#FFFFFF', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 }}
-                    >
-                      <Play size={16} color="#090909" fill="#090909" />
-                      <Text style={{ fontSize: 14, fontWeight: '900', color: '#090909' }}>TAP OR SWIPE TO START</Text>
-                    </View>
-                  </View>
-                )}
+                <IconComp size={13} color={isSel ? '#090909' : '#8A8A94'} />
+                <Text style={{ fontSize: 11, fontWeight: isSel ? '800' : '600', color: isSel ? '#090909' : '#8A8A94' }}>{g.title}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-                {gameState === 'PAUSED' && (
-                  <View style={{ alignItems: 'center', gap: 14 }}>
-                    <Text style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF' }}>PAUSED</Text>
-                    <Text style={{ fontSize: 12.5, color: '#90909A' }}>Tap or swipe anywhere to resume</Text>
-                    <View
-                      style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                    >
-                      <Play size={16} color="#090909" fill="#090909" />
-                      <Text style={{ fontSize: 13.5, fontWeight: '800', color: '#090909' }}>TAP TO RESUME</Text>
-                    </View>
-                  </View>
-                )}
+        {/* Active Mini-Game View */}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          {activeGame === 'snake' && (
+            <SnakeGameView
+              currency={currency}
+              boardWidth={boardWidth}
+              boardHeight={boardHeight}
+              onUpdateScore={handleUpdateScore}
+              onGameOver={handleGameOver}
+              isPaused={isPaused}
+              onGameStart={() => setIsPaused(false)}
+            />
+          )}
 
-                {gameState === 'GAME_OVER' && (
-                  <View style={{ alignItems: 'center', gap: 12 }}>
-                    <Text style={{ fontSize: 23, fontWeight: '900', color: '#FF6B6B', letterSpacing: -0.5 }}>GAME OVER</Text>
-                    <Text style={{ fontSize: 14, color: '#D6D6D6', fontWeight: '600' }}>
-                      Final Balance: <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>{currency}{score * 100}</Text>
-                    </Text>
-                    {score > 0 && score >= highScore && (
-                      <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', borderColor: '#F59E0B', borderWidth: 1, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 }}>
-                        <Text style={{ fontSize: 11, fontWeight: '900', color: '#F59E0B' }}>★ NEW HIGH SCORE!</Text>
-                      </View>
-                    )}
-                    <View
-                      style={{ marginTop: 8, backgroundColor: '#FFFFFF', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8, shadowColor: '#FFFFFF', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 }}
-                    >
-                      <RotateCcw size={16} color="#090909" strokeWidth={2.5} />
-                      <Text style={{ fontSize: 14, fontWeight: '900', color: '#090909' }}>TAP TO PLAY AGAIN</Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
+          {activeGame === 'catch' && (
+            <CoinCatchGameView
+              currency={currency}
+              boardWidth={boardWidth}
+              boardHeight={boardHeight}
+              onUpdateScore={handleUpdateScore}
+              onGameOver={handleGameOver}
+              isPaused={isPaused}
+              onGameStart={() => setIsPaused(false)}
+            />
+          )}
+
+          {activeGame === '2048' && (
+            <Wealth2048GameView
+              currency={currency}
+              boardWidth={boardWidth}
+              boardHeight={boardHeight}
+              onUpdateScore={handleUpdateScore}
+              onGameOver={handleGameOver}
+              onGameStart={() => setIsPaused(false)}
+            />
+          )}
+
+          {activeGame === 'runner' && (
+            <MarketRunnerGameView
+              currency={currency}
+              boardWidth={boardWidth}
+              boardHeight={boardHeight}
+              onUpdateScore={handleUpdateScore}
+              onGameOver={handleGameOver}
+              isPaused={isPaused}
+              onGameStart={() => setIsPaused(false)}
+            />
+          )}
         </View>
       </View>
     </Modal>
