@@ -2473,133 +2473,113 @@ function MainApp() {
     }
 
     if (onboardingStep === 3) {
-      const totalPct = (setupPercent.needs || 0) + (setupPercent.wants || 0) + (setupPercent.savings || 0);
-      const isBalanced = totalPct === 100;
-
-      const autoFixPercentages = (needs, wants, savings) => {
-        const n = Math.max(0, Math.min(100, Math.round(Number(needs) || 0)));
-        const w = Math.max(0, Math.min(100, Math.round(Number(wants) || 0)));
-        if (n >= 100) {
-          return { needs: 80, wants: 10, savings: 10 };
-        }
-        if (n + w >= 100) {
-          const adjW = Math.max(5, 100 - n - 5);
-          const adjS = Math.max(0, 100 - n - adjW);
-          return { needs: n, wants: adjW, savings: adjS };
-        }
-        return { needs: n, wants: w, savings: 100 - n - w };
-      };
+      const PRESETS = [
+        { ratio: '50/30/20', n: 50, w: 30, s: 20 },
+        { ratio: '60/20/20', n: 60, w: 20, s: 20 },
+        { ratio: '70/20/10', n: 70, w: 20, s: 10 },
+        { ratio: '40/30/30', n: 40, w: 30, s: 30 },
+        { ratio: '80/10/10', n: 80, w: 10, s: 10 },
+      ];
 
       return (
         <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
             {/* Header Title Only (Centered) */}
-            <View style={{ paddingTop: 8, marginBottom: 24, alignItems: 'center' }}>
+            <View style={{ paddingTop: 8, marginBottom: 20, alignItems: 'center' }}>
               <Text style={[styles.onboardingStepTitle, { textAlign: 'center' }]}>Target Allocation Strategy</Text>
             </View>
 
-            {/* Modern Segmented Capsule Tabs (Positioned at Top Below Heading) */}
-            <View style={styles.allocationSegmentedContainer}>
-              {[
-                { ratio: '50/30/20', n: 50, w: 30, s: 20 },
-                { ratio: '60/20/20', n: 60, w: 20, s: 20 },
-                { ratio: '70/20/10', n: 70, w: 20, s: 10 },
-                { ratio: '40/30/30', n: 40, w: 30, s: 30 },
-              ].map((r) => {
-                const isMatch =
-                  setupPercent.needs === r.n &&
-                  setupPercent.wants === r.w &&
-                  setupPercent.savings === r.s;
-                return (
-                  <TouchableOpacity
-                    key={r.ratio}
-                    onPress={() => setSetupPercent({ needs: r.n, wants: r.w, savings: r.s })}
-                    style={[styles.allocationSegmentTab, isMatch && styles.allocationSegmentTabActive]}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[styles.allocationSegmentRatioText, isMatch && styles.allocationSegmentRatioTextActive]}>
-                      {r.ratio}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+            {/* Split Layout: Left side rules selection, Right side percentages */}
+            <View style={{ flexDirection: 'row', gap: 14, marginTop: 4 }}>
+              {/* Left Column: Rules Selection (Swipable / Scrollable) */}
+              <View style={{ width: '42%' }}>
+                <Text style={styles.columnHeaderLabel}>RULES</Text>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled={true}
+                  style={{ maxHeight: 290 }}
+                  contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+                >
+                  {PRESETS.map((r) => {
+                    const isMatch =
+                      setupPercent.needs === r.n &&
+                      setupPercent.wants === r.w &&
+                      setupPercent.savings === r.s;
+                    return (
+                      <TouchableOpacity
+                        key={r.ratio}
+                        onPress={() => setSetupPercent({ needs: r.n, wants: r.w, savings: r.s })}
+                        style={[
+                          styles.ruleSelectCard,
+                          isMatch && styles.ruleSelectCardActive,
+                        ]}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={[styles.ruleSelectRatio, isMatch && styles.ruleSelectRatioActive]}>
+                          {r.ratio}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Right Column: Needs, Wants, Savings Percentages Only */}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.columnHeaderLabel}>ALLOCATION</Text>
+                <View style={{ gap: 8 }}>
+                  {/* Needs */}
+                  <View style={styles.pillarAllocCard}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={[styles.pillarDot, { backgroundColor: '#FFFFFF' }]} />
+                        <Text style={styles.pillarAllocName}>Needs</Text>
+                      </View>
+                      <Text style={styles.pillarAllocPercent}>{setupPercent.needs}%</Text>
+                    </View>
+                    <Text style={styles.pillarAllocAmount}>{formatCurr(allocNeeds)}</Text>
+                  </View>
+
+                  {/* Wants */}
+                  <View style={styles.pillarAllocCard}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={[styles.pillarDot, { backgroundColor: '#8E8E93' }]} />
+                        <Text style={styles.pillarAllocName}>Wants</Text>
+                      </View>
+                      <Text style={styles.pillarAllocPercent}>{setupPercent.wants}%</Text>
+                    </View>
+                    <Text style={styles.pillarAllocAmount}>{formatCurr(allocWants)}</Text>
+                  </View>
+
+                  {/* Savings */}
+                  <View style={styles.pillarAllocCard}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={[styles.pillarDot, { backgroundColor: '#48484A' }]} />
+                        <Text style={styles.pillarAllocName}>Savings</Text>
+                      </View>
+                      <Text style={styles.pillarAllocPercent}>{setupPercent.savings}%</Text>
+                    </View>
+                    <Text style={styles.pillarAllocAmount}>{formatCurr(allocSavings)}</Text>
+                  </View>
+                </View>
+              </View>
             </View>
 
             {/* Horizontal Segmented Ratio Visualizer Bar */}
-            <View style={styles.ratioVisualizerContainer}>
+            <View style={[styles.ratioVisualizerContainer, { marginTop: 20 }]}>
               <View style={styles.ratioVisualizerBar}>
                 <View style={[styles.ratioVisualizerSeg, { flex: Math.max(1, setupPercent.needs), backgroundColor: '#FFFFFF' }]} />
                 <View style={[styles.ratioVisualizerSeg, { flex: Math.max(1, setupPercent.wants), backgroundColor: '#8E8E93' }]} />
                 <View style={[styles.ratioVisualizerSeg, { flex: Math.max(1, setupPercent.savings), backgroundColor: '#48484A' }]} />
               </View>
-              <View style={styles.ratioVisualizerLegend}>
-                <View style={styles.ratioLegendItem}>
-                  <View style={[styles.ratioLegendDot, { backgroundColor: '#FFFFFF' }]} />
-                  <Text style={styles.ratioLegendText}>Needs {setupPercent.needs}%</Text>
-                </View>
-                <View style={styles.ratioLegendItem}>
-                  <View style={[styles.ratioLegendDot, { backgroundColor: '#8E8E93' }]} />
-                  <Text style={styles.ratioLegendText}>Wants {setupPercent.wants}%</Text>
-                </View>
-                <View style={styles.ratioLegendItem}>
-                  <View style={[styles.ratioLegendDot, { backgroundColor: '#48484A' }]} />
-                  <Text style={styles.ratioLegendText}>Savings {setupPercent.savings}%</Text>
-                </View>
-              </View>
             </View>
 
-            {/* Horizontal Sliders for Each Pillar (No Subtext) */}
-            <View style={{ gap: 12 }}>
-              <OnboardingRatioSliderTrack
-                label="Needs (Fixed Living)"
-                percent={setupPercent.needs}
-                amount={allocNeeds}
-                color="#FFFFFF"
-                formatCurr={formatCurr}
-                onPercentChange={(val) => setSetupPercent((prev) => ({ ...prev, needs: val }))}
-              />
-
-              <OnboardingRatioSliderTrack
-                label="Wants (Discretionary)"
-                percent={setupPercent.wants}
-                amount={allocWants}
-                color="#8E8E93"
-                formatCurr={formatCurr}
-                onPercentChange={(val) => setSetupPercent((prev) => ({ ...prev, wants: val }))}
-              />
-
-              <OnboardingRatioSliderTrack
-                label="Savings (Wealth & Debt)"
-                percent={setupPercent.savings}
-                amount={allocSavings}
-                color="#636366"
-                formatCurr={formatCurr}
-                onPercentChange={(val) => setSetupPercent((prev) => ({ ...prev, savings: val }))}
-              />
-            </View>
-
-            {/* Single Centered CTA for Auto-Fix or Balance Status */}
-            <View style={styles.centerAutoFixWrapper}>
-              {!isBalanced ? (
-                <TouchableOpacity
-                  style={styles.centerAutoFixCta}
-                  onPress={() => {
-                    const fixed = autoFixPercentages(setupPercent.needs, setupPercent.wants, setupPercent.savings);
-                    setSetupPercent(fixed);
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <Sparkles size={17} color="#090909" strokeWidth={2.5} />
-                  <Text style={styles.centerAutoFixText}>
-                    Auto-Balance to 100% ({totalPct > 100 ? `+${totalPct - 100}% over` : `${100 - totalPct}% unallocated`})
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.centerBalancedIndicator}>
-                  <Text style={styles.centerBalancedText}>100% Fully Allocated</Text>
-                </View>
-              )}
-            </View>
+            {/* Modify Note */}
+            <Text style={styles.settingsModifyNote}>
+              * Modify & customize percentages anytime in Settings
+            </Text>
           </ScrollView>
 
           {/* Bottom Navigation with Highlighted Continue CTA */}
@@ -2613,20 +2593,12 @@ function MainApp() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.onboardingContinueArrowBtn,
-                !isBalanced && styles.onboardingContinueArrowBtnDisabled,
-              ]}
+              style={styles.onboardingContinueArrowBtn}
               onPress={() => {
-                let currentPct = setupPercent;
-                if (!isBalanced) {
-                  currentPct = autoFixPercentages(setupPercent.needs, setupPercent.wants, setupPercent.savings);
-                  setSetupPercent(currentPct);
-                }
 
-                const effectiveNeeds = Math.round((totalSetupInc * currentPct.needs) / 100);
-                const effectiveWants = Math.round((totalSetupInc * currentPct.wants) / 100);
-                const effectiveSavings = Math.round((totalSetupInc * currentPct.savings) / 100);
+                const effectiveNeeds = Math.round((totalSetupInc * setupPercent.needs) / 100);
+                const effectiveWants = Math.round((totalSetupInc * setupPercent.wants) / 100);
+                const effectiveSavings = Math.round((totalSetupInc * setupPercent.savings) / 100);
 
                 // Initialize default subcategory budgets proportional to the pillar allocations
                 setSetupCategories({
@@ -6304,6 +6276,77 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '600',
     color: '#A0A0A0',
+  },
+  columnHeaderLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#707070',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  ruleSelectCard: {
+    backgroundColor: '#141416',
+    borderWidth: 1.5,
+    borderColor: '#24242A',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ruleSelectCardActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+    shadowColor: '#FFFFFF',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  ruleSelectRatio: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#8E8E93',
+  },
+  ruleSelectRatioActive: {
+    color: '#090909',
+    fontWeight: '900',
+  },
+  pillarAllocCard: {
+    backgroundColor: '#141416',
+    borderWidth: 1,
+    borderColor: '#24242A',
+    borderRadius: 16,
+    padding: 13,
+    justifyContent: 'center',
+  },
+  pillarAllocName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  pillarAllocPercent: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  pillarAllocAmount: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#8A8A8A',
+    marginTop: 3,
+  },
+  pillarDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  settingsModifyNote: {
+    fontSize: 11,
+    color: '#707070',
+    textAlign: 'center',
+    marginTop: 14,
+    fontStyle: 'italic',
   },
   allocationSegmentedContainer: {
     flexDirection: 'row',
