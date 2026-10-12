@@ -3518,15 +3518,15 @@ function MainApp() {
     const clampedGaugePercent = Math.min(100, Math.max(0, overallSpentPercent));
 
     // Semi-circular arc parameters
-    // Center at (140, 130), Radius = 95
-    // Semi-circle length = PI * 95 = 298.45
-    const arcLength = 298.45;
+    // Center at (145, 135), Radius = 105
+    // Semi-circle length = PI * 105 = 329.87
+    const arcLength = 329.87;
     const strokeOffset = arcLength * (1 - clampedGaugePercent / 100);
 
     // Pip needle angle
     const angleRad = Math.PI * (1 - clampedGaugePercent / 100);
-    const pipX = 140 + 95 * Math.cos(angleRad);
-    const pipY = 130 - 95 * Math.sin(angleRad);
+    const pipX = 145 + 105 * Math.cos(angleRad);
+    const pipY = 135 - 105 * Math.sin(angleRad);
 
     const getPillarColors = (catId) => {
       switch (catId) {
@@ -3588,21 +3588,21 @@ function MainApp() {
         {/* Speedometer / Arc Gauge Section */}
         <View style={styles.gaugeCardContainer}>
           <Text style={styles.gaugeTopLabel}>OVERALL SPENT: {overallSpentPercent}%</Text>
-          <View style={{ alignItems: 'center', justifyContent: 'center', height: 145, marginTop: 2 }}>
-            <Svg width={280} height={145} viewBox="0 0 280 145">
+          <View style={{ alignItems: 'center', justifyContent: 'center', height: 150, marginTop: 4 }}>
+            <Svg width={290} height={150} viewBox="0 0 290 150">
               {/* Background Track */}
               <Path
-                d="M 45,130 A 95,95 0 0,1 235,130"
+                d="M 40,135 A 105,105 0 0,1 250,135"
                 stroke="#252525"
-                strokeWidth={22}
+                strokeWidth={16}
                 strokeLinecap="round"
                 fill="none"
               />
               {/* Active White Fill */}
               <Path
-                d="M 45,130 A 95,95 0 0,1 235,130"
+                d="M 40,135 A 105,105 0 0,1 250,135"
                 stroke="#FFFFFF"
-                strokeWidth={22}
+                strokeWidth={16}
                 strokeLinecap="round"
                 fill="none"
                 strokeDasharray={`${arcLength}`}
@@ -3616,7 +3616,12 @@ function MainApp() {
 
             {/* Metric Overlay inside Arch */}
             <View style={styles.gaugeCenterTextOverlay}>
-              <Text style={styles.gaugeMainAmount} numberOfLines={1}>
+              <Text
+                style={styles.gaugeMainAmount}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
+              >
                 {isTotalOver ? `+${data.currency}${totalOverAmount.toLocaleString('en-IN')}` : `${data.currency}${totalRemaining.toLocaleString('en-IN')}`}
               </Text>
               <Text style={[styles.gaugeSubLabel, isTotalOver && { color: '#FF7070' }]}>
@@ -6043,29 +6048,31 @@ const styles = StyleSheet.create({
   },
   gaugeCenterTextOverlay: {
     position: 'absolute',
-    top: 48,
-    left: 0,
-    right: 0,
+    top: 54,
+    left: 20,
+    right: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   gaugeMainAmount: {
-    fontSize: 36,
-    fontWeight: '900',
+    fontSize: 28,
+    fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.5,
+    textAlign: 'center',
   },
   gaugeSubLabel: {
-    fontSize: 12.5,
+    fontSize: 12,
     color: '#8A8A8A',
-    marginTop: 2,
+    marginTop: 3,
     fontWeight: '500',
+    textAlign: 'center',
   },
   gaugeBottomLabelsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: 210,
-    marginTop: -4,
+    width: 250,
+    marginTop: 8,
   },
   gaugeCornerLabel: {
     fontSize: 12,
