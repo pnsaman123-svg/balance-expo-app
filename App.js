@@ -3890,51 +3890,47 @@ function MainApp() {
           <View style={{ width: 36 }} />
         </View>
 
-        {/* Configuration Charcoal Card */}
-        <View style={[styles.charcoalBudgetCard, { marginTop: 14 }]}>
-          <Text style={styles.cardLabelCharcoal}>ALLOCATION & CONFIGURATION</Text>
+        {/* Settings Action Items */}
+        <View style={{ gap: 10, marginTop: 18 }}>
+          {/* Adjust 50/30/20 Allocation */}
+          <TouchableOpacity
+            style={styles.darkActionCard}
+            onPress={handleOpenAdjustAllocation}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.darkActionCardTitle}>Target Allocation Strategy</Text>
+            <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
+          </TouchableOpacity>
 
-          <View style={{ gap: 10, marginTop: 12 }}>
-            {/* Adjust 50/30/20 Allocation */}
-            <TouchableOpacity
-              style={styles.darkActionCard}
-              onPress={handleOpenAdjustAllocation}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.darkActionCardTitle}>Target Allocation Strategy</Text>
-              <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
-            </TouchableOpacity>
+          {/* Rerun Onboarding Wizard */}
+          <TouchableOpacity
+            style={styles.darkActionCard}
+            onPress={() => {
+              setSetupIncome([{ id: '1', name: 'Monthly Salary', amount: '' }]);
+              setSetupPercent({ needs: 50, wants: 30, savings: 20 });
+              setOnboardingStep(1);
+              saveData({ ...INITIAL_DATA, isOnboarded: false });
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.darkActionCardTitle}>Reconfigure Profile & Income</Text>
+            <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
+          </TouchableOpacity>
 
-            {/* Rerun Onboarding Wizard */}
-            <TouchableOpacity
-              style={styles.darkActionCard}
-              onPress={() => {
-                setSetupIncome([{ id: '1', name: 'Monthly Salary', amount: '' }]);
-                setSetupPercent({ needs: 50, wants: 30, savings: 20 });
-                setOnboardingStep(1);
-                saveData({ ...INITIAL_DATA, isOnboarded: false });
-              }}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.darkActionCardTitle}>Reconfigure Profile & Income</Text>
-              <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
-            </TouchableOpacity>
-
-            {/* Reset to Clean Zero Data */}
-            <TouchableOpacity
-              style={styles.darkActionCard}
-              onPress={() => {
-                setSetupIncome([{ id: '1', name: 'Monthly Salary', amount: '' }]);
-                setSetupPercent({ needs: 50, wants: 30, savings: 20 });
-                setOnboardingStep(1);
-                saveData({ ...INITIAL_DATA, isOnboarded: false });
-              }}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.darkActionCardTitle}>Reset Profile to Default</Text>
-              <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
-            </TouchableOpacity>
-          </View>
+          {/* Reset to Clean Zero Data */}
+          <TouchableOpacity
+            style={styles.darkActionCard}
+            onPress={() => {
+              setSetupIncome([{ id: '1', name: 'Monthly Salary', amount: '' }]);
+              setSetupPercent({ needs: 50, wants: 30, savings: 20 });
+              setOnboardingStep(1);
+              saveData({ ...INITIAL_DATA, isOnboarded: false });
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.darkActionCardTitle}>Reset Profile to Default</Text>
+            <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
