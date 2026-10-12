@@ -2494,8 +2494,38 @@ function MainApp() {
         <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
             {/* Header Title Only (Centered) */}
-            <View style={{ paddingTop: 6, marginBottom: 18, alignItems: 'center' }}>
+            <View style={{ paddingTop: 6, marginBottom: 14, alignItems: 'center' }}>
               <Text style={[styles.onboardingStepTitle, { textAlign: 'center' }]}>Target Allocation Strategy</Text>
+            </View>
+
+            {/* Modern Segmented Dual-Tier Capsule Tabs (Positioned at Top Below Heading) */}
+            <View style={styles.allocationSegmentedContainer}>
+              {[
+                { ratio: '50/30/20', tag: 'Balanced', n: 50, w: 30, s: 20 },
+                { ratio: '60/20/20', tag: 'Essential', n: 60, w: 20, s: 20 },
+                { ratio: '70/20/10', tag: 'Lean', n: 70, w: 20, s: 10 },
+                { ratio: '40/30/30', tag: 'Growth', n: 40, w: 30, s: 30 },
+              ].map((r) => {
+                const isMatch =
+                  setupPercent.needs === r.n &&
+                  setupPercent.wants === r.w &&
+                  setupPercent.savings === r.s;
+                return (
+                  <TouchableOpacity
+                    key={r.ratio}
+                    onPress={() => setSetupPercent({ needs: r.n, wants: r.w, savings: r.s })}
+                    style={[styles.allocationSegmentTab, isMatch && styles.allocationSegmentTabActive]}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.allocationSegmentRatioText, isMatch && styles.allocationSegmentRatioTextActive]}>
+                      {r.ratio}
+                    </Text>
+                    <Text style={[styles.allocationSegmentTagText, isMatch && styles.allocationSegmentTagTextActive]}>
+                      {r.tag}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             {/* Horizontal Segmented Ratio Visualizer Bar */}
@@ -2519,33 +2549,6 @@ function MainApp() {
                   <Text style={styles.ratioLegendText}>Savings {setupPercent.savings}%</Text>
                 </View>
               </View>
-            </View>
-
-            {/* Ratio Presets Below Top Bar */}
-            <View style={styles.ratioPillsRow}>
-              {[
-                { ratio: '50/30/20', n: 50, w: 30, s: 20 },
-                { ratio: '60/20/20', n: 60, w: 20, s: 20 },
-                { ratio: '70/20/10', n: 70, w: 20, s: 10 },
-                { ratio: '40/30/30', n: 40, w: 30, s: 30 },
-              ].map((r) => {
-                const isMatch =
-                  setupPercent.needs === r.n &&
-                  setupPercent.wants === r.w &&
-                  setupPercent.savings === r.s;
-                return (
-                  <TouchableOpacity
-                    key={r.ratio}
-                    onPress={() => setSetupPercent({ needs: r.n, wants: r.w, savings: r.s })}
-                    style={[styles.ratioPillChip, isMatch && styles.ratioPillChipActive]}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[styles.ratioPillText, isMatch && styles.ratioPillTextActive]}>
-                      {r.ratio}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
             </View>
 
             {/* Horizontal Sliders for Each Pillar (No Subtext) */}
@@ -4106,10 +4109,10 @@ function MainApp() {
                 <Text style={styles.lightSectionHeader}>QUICK PRESETS</Text>
                 <View style={styles.lightPresetRow}>
                   {[
-                    { label: '50/30/20', n: 50, w: 30, s: 20 },
-                    { label: '60/20/20', n: 60, w: 20, s: 20 },
-                    { label: '70/20/10', n: 70, w: 20, s: 10 },
-                    { label: '40/30/30', n: 40, w: 30, s: 30 },
+                    { label: '50/30/20', tag: 'Balanced', n: 50, w: 30, s: 20 },
+                    { label: '60/20/20', tag: 'Essential', n: 60, w: 20, s: 20 },
+                    { label: '70/20/10', tag: 'Lean', n: 70, w: 20, s: 10 },
+                    { label: '40/30/30', tag: 'Growth', n: 40, w: 30, s: 30 },
                   ].map((p) => {
                     const isSelected =
                       customPercent.needs === p.n &&
@@ -4120,9 +4123,13 @@ function MainApp() {
                         key={p.label}
                         style={[styles.lightPresetPill, isSelected && styles.lightPresetPillActive]}
                         onPress={() => handleSelectPreset(p.n, p.w, p.s)}
+                        activeOpacity={0.75}
                       >
                         <Text style={[styles.lightPresetPillText, isSelected && styles.lightPresetPillTextActive]}>
                           {p.label}
+                        </Text>
+                        <Text style={[styles.lightPresetPillTag, isSelected && styles.lightPresetPillTagActive]}>
+                          {p.tag}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -5346,26 +5353,47 @@ const styles = StyleSheet.create({
   },
   lightPresetRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+    backgroundColor: '#F0F0F2',
+    borderRadius: 14,
+    padding: 3,
+    gap: 4,
+    marginBottom: 8,
   },
   lightPresetPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: '#F2F2F2',
+    flex: 1,
+    paddingVertical: 7,
+    paddingHorizontal: 2,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   lightPresetPillActive: {
     backgroundColor: '#090909',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   lightPresetPillText: {
-    fontSize: 10.5,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '800',
     color: '#666666',
   },
   lightPresetPillTextActive: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '900',
+  },
+  lightPresetPillTag: {
+    fontSize: 8.5,
+    fontWeight: '700',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    marginTop: 1,
+  },
+  lightPresetPillTagActive: {
+    color: '#A0A0A5',
   },
   lightStepperCard: {
     backgroundColor: '#F8F8F8',
@@ -6288,6 +6316,54 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '600',
     color: '#A0A0A0',
+  },
+  allocationSegmentedContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#121215',
+    borderRadius: 16,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#24242A',
+    marginBottom: 16,
+    gap: 4,
+  },
+  allocationSegmentTab: {
+    flex: 1,
+    paddingVertical: 9,
+    paddingHorizontal: 2,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  allocationSegmentTabActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  allocationSegmentRatioText: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: '#8E8E93',
+    letterSpacing: -0.2,
+  },
+  allocationSegmentRatioTextActive: {
+    color: '#090909',
+    fontWeight: '900',
+  },
+  allocationSegmentTagText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#55555C',
+    textTransform: 'uppercase',
+    marginTop: 2,
+    letterSpacing: 0.3,
+  },
+  allocationSegmentTagTextActive: {
+    color: '#333338',
   },
   ratioPillsRow: {
     flexDirection: 'row',
