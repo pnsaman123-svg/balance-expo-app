@@ -2494,17 +2494,17 @@ function MainApp() {
         <View style={[styles.onboardingContainer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, justifyContent: 'space-between' }]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
             {/* Header Title Only (Centered) */}
-            <View style={{ paddingTop: 6, marginBottom: 14, alignItems: 'center' }}>
+            <View style={{ paddingTop: 8, marginBottom: 24, alignItems: 'center' }}>
               <Text style={[styles.onboardingStepTitle, { textAlign: 'center' }]}>Target Allocation Strategy</Text>
             </View>
 
-            {/* Modern Segmented Dual-Tier Capsule Tabs (Positioned at Top Below Heading) */}
+            {/* Modern Segmented Capsule Tabs (Positioned at Top Below Heading) */}
             <View style={styles.allocationSegmentedContainer}>
               {[
-                { ratio: '50/30/20', tag: 'Balanced', n: 50, w: 30, s: 20 },
-                { ratio: '60/20/20', tag: 'Essential', n: 60, w: 20, s: 20 },
-                { ratio: '70/20/10', tag: 'Lean', n: 70, w: 20, s: 10 },
-                { ratio: '40/30/30', tag: 'Growth', n: 40, w: 30, s: 30 },
+                { ratio: '50/30/20', n: 50, w: 30, s: 20 },
+                { ratio: '60/20/20', n: 60, w: 20, s: 20 },
+                { ratio: '70/20/10', n: 70, w: 20, s: 10 },
+                { ratio: '40/30/30', n: 40, w: 30, s: 30 },
               ].map((r) => {
                 const isMatch =
                   setupPercent.needs === r.n &&
@@ -2519,9 +2519,6 @@ function MainApp() {
                   >
                     <Text style={[styles.allocationSegmentRatioText, isMatch && styles.allocationSegmentRatioTextActive]}>
                       {r.ratio}
-                    </Text>
-                    <Text style={[styles.allocationSegmentTagText, isMatch && styles.allocationSegmentTagTextActive]}>
-                      {r.tag}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -4109,10 +4106,10 @@ function MainApp() {
                 <Text style={styles.lightSectionHeader}>QUICK PRESETS</Text>
                 <View style={styles.lightPresetRow}>
                   {[
-                    { label: '50/30/20', tag: 'Balanced', n: 50, w: 30, s: 20 },
-                    { label: '60/20/20', tag: 'Essential', n: 60, w: 20, s: 20 },
-                    { label: '70/20/10', tag: 'Lean', n: 70, w: 20, s: 10 },
-                    { label: '40/30/30', tag: 'Growth', n: 40, w: 30, s: 30 },
+                    { label: '50/30/20', n: 50, w: 30, s: 20 },
+                    { label: '60/20/20', n: 60, w: 20, s: 20 },
+                    { label: '70/20/10', n: 70, w: 20, s: 10 },
+                    { label: '40/30/30', n: 40, w: 30, s: 30 },
                   ].map((p) => {
                     const isSelected =
                       customPercent.needs === p.n &&
@@ -4127,9 +4124,6 @@ function MainApp() {
                       >
                         <Text style={[styles.lightPresetPillText, isSelected && styles.lightPresetPillTextActive]}>
                           {p.label}
-                        </Text>
-                        <Text style={[styles.lightPresetPillTag, isSelected && styles.lightPresetPillTagActive]}>
-                          {p.tag}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -6329,7 +6323,7 @@ const styles = StyleSheet.create({
   },
   allocationSegmentTab: {
     flex: 1,
-    paddingVertical: 9,
+    paddingVertical: 10,
     paddingHorizontal: 2,
     borderRadius: 12,
     alignItems: 'center',
@@ -6345,7 +6339,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   allocationSegmentRatioText: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '800',
     color: '#8E8E93',
     letterSpacing: -0.2,
