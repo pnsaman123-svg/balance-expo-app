@@ -3901,11 +3901,8 @@ function MainApp() {
               onPress={handleOpenAdjustAllocation}
               activeOpacity={0.75}
             >
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.darkActionCardTitle}>Target Allocation Strategy</Text>
-                <Text style={styles.darkActionCardSub}>Needs {customPercent.needs}% · Wants {customPercent.wants}% · Savings {customPercent.savings}%</Text>
-              </View>
-              <ChevronRight size={16} color="#8A8A8A" />
+              <Text style={styles.darkActionCardTitle}>Target Allocation Strategy</Text>
+              <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
             </TouchableOpacity>
 
             {/* Rerun Onboarding Wizard */}
@@ -3919,11 +3916,8 @@ function MainApp() {
               }}
               activeOpacity={0.75}
             >
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.darkActionCardTitle}>Reconfigure Profile & Income</Text>
-                <Text style={styles.darkActionCardSub}>Update net salary, target allocation %, and baseline defaults</Text>
-              </View>
-              <ChevronRight size={16} color="#8A8A8A" />
+              <Text style={styles.darkActionCardTitle}>Reconfigure Profile & Income</Text>
+              <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
             </TouchableOpacity>
 
             {/* Reset to Clean Zero Data */}
@@ -3937,11 +3931,8 @@ function MainApp() {
               }}
               activeOpacity={0.75}
             >
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.darkActionCardTitle}>Reset Profile to Default</Text>
-                <Text style={styles.darkActionCardSub}>Clear recorded transactions and restore default baseline</Text>
-              </View>
-              <ChevronRight size={16} color="#8A8A8A" />
+              <Text style={styles.darkActionCardTitle}>Reset Profile to Default</Text>
+              <ChevronRight size={18} color="#8A8A8A" strokeWidth={2.2} />
             </TouchableOpacity>
           </View>
         </View>
@@ -5292,8 +5283,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   darkActionCardTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   darkActionCardSub: {
