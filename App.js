@@ -2626,10 +2626,10 @@ function MainApp() {
               activeOpacity={0.85}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16 }}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: isBalanced ? '#090909' : '#FFFFFF' }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: '#090909' }}>
                   Continue
                 </Text>
-                <ArrowRight size={18} color={isBalanced ? '#090909' : '#FFFFFF'} strokeWidth={3} />
+                <ArrowRight size={18} color="#090909" strokeWidth={3} />
               </View>
             </TouchableOpacity>
           </View>
